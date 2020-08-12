@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30320.27
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DarenaSolutions.CCdaToFhirConverter", "DarenaSolutions.CCdaToFhirConverter\DarenaSolutions.CCdaToFhirConverter.csproj", "{79335762-3DCB-4B2F-ABB9-EDFA7240B6EB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{79335762-3DCB-4B2F-ABB9-EDFA7240B6EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79335762-3DCB-4B2F-ABB9-EDFA7240B6EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79335762-3DCB-4B2F-ABB9-EDFA7240B6EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79335762-3DCB-4B2F-ABB9-EDFA7240B6EB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B0CA6814-F3BB-4CC9-9CC7-D5AEF57E7C4E}
+	EndGlobalSection
+EndGlobal
