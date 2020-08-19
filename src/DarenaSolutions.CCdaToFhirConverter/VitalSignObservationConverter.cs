@@ -144,14 +144,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     throw new InvalidOperationException($"The vital sign result is not numeric in: {element}");
 
                 var unit = valueQuantityElement.Attribute("unit")?.Value;
-                if (string.IsNullOrWhiteSpace(unit))
-                    throw new InvalidOperationException($"The vital sign unit of measure is not documented in: {element}");
 
-                var vitalSignQuantity = new Quantity()
+                // Unit can be blank, for eg: BMI. removed the throw here.
+                var vitalSignQuantity = new Quantity();
+                vitalSignQuantity.Value = quantityValue;
+
+                if (!string.IsNullOrWhiteSpace(unit))
                 {
-                    Value = quantityValue,
-                    Unit = unit
-                };
+                    vitalSignQuantity.Unit = unit;
+                }
 
                 vitalSign.Value = vitalSignQuantity;
 
