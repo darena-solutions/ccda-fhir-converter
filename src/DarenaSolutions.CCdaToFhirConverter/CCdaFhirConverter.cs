@@ -87,6 +87,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var vitalSignsConverter = new VitalSignObservationConverter(patientConverter.PatientId);
             vitalSignsConverter.AddToBundle(bundle, vitalSignsElements, _namespaceManager, cacheManager);
 
+            var procedureXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.7.1']/../n1:entry/n1:procedure";
+            var proceduresElements = cCda.XPathSelectElements(procedureXPath, _namespaceManager);
+            var procedureConverter = new ProcedureConverter(patientConverter.PatientId);
+            procedureConverter.AddToBundle(bundle, proceduresElements, _namespaceManager, cacheManager);
+
             return bundle;
         }
     }
