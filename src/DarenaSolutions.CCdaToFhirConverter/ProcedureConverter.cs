@@ -87,7 +87,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 procedure.Subject = new ResourceReference($"urn:uuid:{_patientId}");
 
                 var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
-                var effectiveTime = effectiveTimeElement.ToFhirDateTime();
+                var effectiveTime = effectiveTimeElement?.ToDateTimeElement();
 
                 if (effectiveTime == null)
                     throw new InvalidOperationException($"A procedure occurrence date time could not be found in: {element}");
