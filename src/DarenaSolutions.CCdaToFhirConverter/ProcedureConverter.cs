@@ -53,7 +53,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .Attribute("code")?
                     .Value;
 
-                if (codeValue.ToLower().Equals("completed"))
+                if (!string.IsNullOrWhiteSpace(codeValue) && codeValue.ToLowerInvariant().Equals("completed"))
                 {
                     procedure.Status = EventStatus.Completed;
                 }
