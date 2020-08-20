@@ -48,25 +48,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     procedure.Identifier.Add(identifierElement.ToIdentifier());
                 }
 
-                CodeableConcept clinicalStatus = null;
-                var statusCodeElement = element.Element(Defaults.DefaultNs + "statusCode");
-                if (statusCodeElement != null)
+                var codeValue = element
+                    .Element(Defaults.DefaultNs + "statusCode")?
+                    .Attribute("code")?
+                    .Value;
+
+                if (codeValue.ToLower().Equals("completed"))
                 {
-                    clinicalStatus = statusCodeElement.ToCodeableConcept();
-                    EventStatus? eventStatus = EventStatus.Unknown;
-
-                    // Right now procedure has completed status, if required we can extend it
-                    if (clinicalStatus != null)
-                    {
-                        switch (clinicalStatus.Coding[0].Code)
-                        {
-                            case "completed":
-                                eventStatus = EventStatus.Completed;
-                                break;
-                        }
-
-                        procedure.Status = eventStatus;
-                    }
+                    procedure.Status = EventStatus.Completed;
                 }
 
                 var codeElement = element.Element(Defaults.DefaultNs + "code");
@@ -94,19 +83,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 procedure.Performed = effectiveTime;
 
-                var targetSiteElements = element.Elements(Defaults.DefaultNs + "targetSiteCode");
-                if (targetSiteElements != null)
+                foreach (var targetSiteElement in element.Elements(Defaults.DefaultNs + "targetSiteCode"))
                 {
-                    List<CodeableConcept> targetSiteList = new List<CodeableConcept>();
-                    foreach (var targetSiteElement in targetSiteElements)
-                    {
-                        targetSiteList.Add(targetSiteElement.ToCodeableConcept());
-                    }
-
-                    if (targetSiteList.Count > 0)
-                    {
-                        procedure.BodySite = targetSiteList;
-                    }
+                    procedure.BodySite.Add(targetSiteElement.ToCodeableConcept());
                 }
 
                 bundle.Entry.Add(new Bundle.EntryComponent
