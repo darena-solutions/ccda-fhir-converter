@@ -57,6 +57,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 {
                     procedure.Status = EventStatus.Completed;
                 }
+                else
+                {
+                    procedure.Status = EventStatus.Unknown;
+                }
 
                 var codeElement = element.Element(Defaults.DefaultNs + "code");
                 if (codeElement != null)
