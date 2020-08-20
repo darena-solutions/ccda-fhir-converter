@@ -80,7 +80,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
                 else
                 {
-                    throw new InvalidOperationException($"No code element was found in: {codeElement}");
+                    throw new InvalidOperationException($"No code element was found in: {element}");
                 }
 
                 procedure.Code = codeElement.ToCodeableConcept();
