@@ -82,16 +82,23 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
                 else
                 {
-                    var udiCarrierHumanReadableString = udiCarrierHumanReadableStringElement
-                        .Attribute("extension")?
-                        .Value;
-
-                    Device.UdiCarrierComponent udiCarrierCcomponent = new Device.UdiCarrierComponent
+                    if (string.IsNullOrWhiteSpace(playingDeviceCode))
                     {
-                        DeviceIdentifier = playingDeviceCode,
-                        CarrierHRF = !string.IsNullOrWhiteSpace(udiCarrierHumanReadableString) ? udiCarrierHumanReadableString : null
-                    };
-                    device.UdiCarrier.Add(udiCarrierCcomponent);
+                        throw new InvalidOperationException($"If a udi carrier is found, then a device identifier must exist: {element}");
+                    }
+                    else
+                    {
+                        var udiCarrierHumanReadableString = udiCarrierHumanReadableStringElement
+                            .Attribute("extension")?
+                            .Value;
+
+                        Device.UdiCarrierComponent udiCarrierCcomponent = new Device.UdiCarrierComponent
+                        {
+                            DeviceIdentifier = playingDeviceCode,
+                            CarrierHRF = !string.IsNullOrWhiteSpace(udiCarrierHumanReadableString) ? udiCarrierHumanReadableString : null
+                        };
+                        device.UdiCarrier.Add(udiCarrierCcomponent);
+                    }
                 }
 
                 var statusCodeValue = element
