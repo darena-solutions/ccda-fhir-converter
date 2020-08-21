@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -73,7 +74,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .Value;
 
                 var udiCarrierHumanReadableStringXPath = "n1:participant/n1:participantRole/n1:id";
-                foreach (var udiCarrierHumanReadableStringElement in element.XPathSelectElements(udiCarrierHumanReadableStringXPath, namespaceManager))
+                var udiCarrierHumanReadableStringElement = element.XPathSelectElements(udiCarrierHumanReadableStringXPath, namespaceManager).FirstOrDefault();
+
+                if (udiCarrierHumanReadableStringElement == null)
+                {
+                    throw new InvalidOperationException($"No participantRole id element was found in: {element}");
+                }
+                else
                 {
                     var udiCarrierHumanReadableString = udiCarrierHumanReadableStringElement
                         .Attribute("extension")?
