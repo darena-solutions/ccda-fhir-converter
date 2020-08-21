@@ -74,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .Value;
 
                 var udiCarrierHumanReadableStringXPath = "n1:participant/n1:participantRole/n1:id";
-                var udiCarrierHumanReadableStringElement = element.XPathSelectElements(udiCarrierHumanReadableStringXPath, namespaceManager).FirstOrDefault();
+                var udiCarrierHumanReadableStringElement = element.XPathSelectElement(udiCarrierHumanReadableStringXPath, namespaceManager);
 
                 if (udiCarrierHumanReadableStringElement == null)
                 {
