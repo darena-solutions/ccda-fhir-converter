@@ -92,6 +92,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var procedureConverter = new ProcedureConverter(patientConverter.PatientId);
             procedureConverter.AddToBundle(bundle, proceduresElements, _namespaceManager, cacheManager);
 
+            var deviceXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.23']/../n1:entry/n1:procedure";
+            var devicesElements = cCda.XPathSelectElements(deviceXPath, _namespaceManager);
+            var deviceConverter = new DeviceConverter(patientConverter.PatientId);
+            deviceConverter.AddToBundle(bundle, devicesElements, _namespaceManager, cacheManager);
+
             return bundle;
         }
     }
