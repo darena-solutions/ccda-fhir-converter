@@ -76,29 +76,21 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var udiCarrierHumanReadableStringXPath = "n1:participant/n1:participantRole/n1:id";
                 var udiCarrierHumanReadableStringElement = element.XPathSelectElement(udiCarrierHumanReadableStringXPath, namespaceManager);
 
-                if (udiCarrierHumanReadableStringElement == null)
-                {
-                    throw new InvalidOperationException($"No participantRole id element was found in: {element}");
-                }
-                else
+                if (udiCarrierHumanReadableStringElement != null)
                 {
                     if (string.IsNullOrWhiteSpace(playingDeviceCode))
-                    {
                         throw new InvalidOperationException($"If a udi carrier is found, then a device identifier must exist: {element}");
-                    }
-                    else
-                    {
-                        var udiCarrierHumanReadableString = udiCarrierHumanReadableStringElement
-                            .Attribute("extension")?
-                            .Value;
 
-                        Device.UdiCarrierComponent udiCarrierCcomponent = new Device.UdiCarrierComponent
-                        {
-                            DeviceIdentifier = playingDeviceCode,
-                            CarrierHRF = !string.IsNullOrWhiteSpace(udiCarrierHumanReadableString) ? udiCarrierHumanReadableString : null
-                        };
-                        device.UdiCarrier.Add(udiCarrierCcomponent);
-                    }
+                    var udiCarrierHumanReadableString = udiCarrierHumanReadableStringElement
+                        .Attribute("extension")?
+                        .Value;
+
+                    Device.UdiCarrierComponent udiCarrierCcomponent = new Device.UdiCarrierComponent
+                    {
+                        DeviceIdentifier = playingDeviceCode,
+                        CarrierHRF = !string.IsNullOrWhiteSpace(udiCarrierHumanReadableString) ? udiCarrierHumanReadableString : null
+                    };
+                    device.UdiCarrier.Add(udiCarrierCcomponent);
                 }
 
                 var statusCodeValue = element
