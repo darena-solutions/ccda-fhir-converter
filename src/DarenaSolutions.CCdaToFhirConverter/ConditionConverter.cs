@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Enums;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -12,14 +13,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
     public class ConditionConverter : IResourceConverter
     {
         private readonly string _patientId;
+        private readonly ConditionCategory _category;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConditionConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
-        public ConditionConverter(string patientId)
+        /// <param name="category">The enumeration of the condition category</param>
+        public ConditionConverter(string patientId, ConditionCategory category = ConditionCategory.Extensible)
         {
             _patientId = patientId;
+            _category = category;
         }
 
         /// <inheritdoc />
@@ -60,18 +64,52 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 condition.Code = codeElement.ToCodeableConcept();
 
-                var categoryElement = element
-                    .Element(Defaults.DefaultNs + "code")?
-                    .Element(Defaults.DefaultNs + "translation");
-
-                if (categoryElement == null)
+                if (_category == ConditionCategory.Extensible)
                 {
-                    categoryElement = element.Element(Defaults.DefaultNs + "code");
-                    if (categoryElement == null)
-                        throw new InvalidOperationException($"A condition category was not found in: {element}");
-                }
+                    var categoryElement = element
+                        .Element(Defaults.DefaultNs + "code")?
+                        .Element(Defaults.DefaultNs + "translation");
 
-                condition.Category.Add(categoryElement.ToCodeableConcept());
+                    if (categoryElement == null)
+                    {
+                        categoryElement = element.Element(Defaults.DefaultNs + "code");
+                        if (categoryElement == null)
+                            throw new InvalidOperationException($"A condition category was not found in: {element}");
+                    }
+
+                    condition.Category.Add(categoryElement.ToCodeableConcept());
+                }
+                else
+                {
+                    var categoryCoding = new Coding()
+                    {
+                        System = "http://terminology.hl7.org/CodeSystem/condition-category"
+                    };
+
+                    switch (_category)
+                    {
+                        case ConditionCategory.ProblemList:
+                            categoryCoding.Code = "problem-list-item";
+                            categoryCoding.Display = "Problem List Item";
+                            break;
+                        case ConditionCategory.EncounterDiagnosis:
+                            categoryCoding.Code = "encounter-diagnosis";
+                            categoryCoding.Display = "Encounter Diagnosis";
+                            break;
+                        case ConditionCategory.HealthConcern:
+                            categoryCoding.Code = "health-concern";
+                            categoryCoding.Display = "Health Concern";
+                            break;
+                    }
+
+                    condition.Category.Add(new CodeableConcept()
+                    {
+                        Coding = new List<Coding>()
+                        {
+                            categoryCoding
+                        }
+                    });
+                }
 
                 var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
                 condition.Onset = effectiveTimeElement?.ToDateTimeElement();

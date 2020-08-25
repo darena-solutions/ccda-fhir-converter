@@ -3,6 +3,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Enums;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -70,7 +71,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var problemXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.5.1']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
             var problemElements = cCda.XPathSelectElements(problemXPath, _namespaceManager);
-            var problemConverter = new ConditionConverter(patientConverter.PatientId);
+            var problemConverter = new ConditionConverter(patientConverter.PatientId, ConditionCategory.ProblemList);
             problemConverter.AddToBundle(bundle, problemElements, _namespaceManager, cacheManager);
 
             var immunizationXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.2.1']/../n1:entry/n1:substanceAdministration";
