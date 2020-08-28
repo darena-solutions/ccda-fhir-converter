@@ -96,11 +96,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 // Issued
                 var issuedDateXPath = "n1:effectiveTime";
                 var issuedDate = element.XPathSelectElement(issuedDateXPath, namespaceManager);
+                smokingStatus.Issued = issuedDate?.ToFhirDateTime().ToDateTimeOffset(TimeSpan.Zero);
 
-                if (issuedDate?.ToFhirDateTime() == null)
+                if (smokingStatus.Issued == null)
                     throw new InvalidOperationException($"Could not determine the smoking status documented date: {element}");
-
-                smokingStatus.Issued = issuedDate.ToFhirDateTime().ToDateTimeOffset(TimeSpan.Zero);
 
                 // Effective Date
                 smokingStatus.Effective = issuedDate.ToDateTimeElement();
