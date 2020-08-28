@@ -69,6 +69,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var medicationConverter = new MedicationConverter(patientConverter.PatientId);
             medicationConverter.AddToBundle(bundle, medicationElements, _namespaceManager, cacheManager);
 
+            var encounterDiagnosisXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.22.1']/.." +
+                "/n1:entry/n1:encounter/n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation";
+            var encounterDiagnosisElements = cCda.XPathSelectElements(encounterDiagnosisXPath, _namespaceManager);
+            var encounterDiagnosisConverter = new ConditionConverter(patientConverter.PatientId, ConditionCategory.EncounterDiagnosis);
+            encounterDiagnosisConverter.AddToBundle(bundle, encounterDiagnosisElements, _namespaceManager, cacheManager);
+
             var healthConcernXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.58']/../n1:entry/n1:observation";
             var healthConcernElements = cCda.XPathSelectElements(healthConcernXPath, _namespaceManager);
             var healthConcernConverter = new ConditionConverter(patientConverter.PatientId, ConditionCategory.HealthConcern);
