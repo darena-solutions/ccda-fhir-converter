@@ -66,13 +66,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (string.IsNullOrWhiteSpace(valueElementText))
                     throw new InvalidOperationException($"No value element was found in: {element}");
 
-                CodeableConcept valueCodeableConcept = new CodeableConcept(string.Empty, string.Empty, valueElementText);
+                CodeableConcept valueCodeableConcept = new CodeableConcept
+                {
+                    Text = valueElementText
+                };
                 goal.Description = valueCodeableConcept;
                 goal.Target.Add(new Goal.TargetComponent { Measure = valueCodeableConcept });
                 goal.Subject = new ResourceReference($"urn:uuid:{_patientId}");
 
                 var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
-                var effectiveTime = effectiveTimeElement?.ToFhirDateTime();
+                var effectiveTime = effectiveTimeElement?.ToFhirDate();
                 if (effectiveTime != null)
                 {
                     goal.StatusDate = effectiveTime.Value;

@@ -270,6 +270,31 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         }
 
         /// <summary>
+        /// Converts an element into its FHIR <see cref="Date"/> representation. The date is derived from one of
+        /// two places. If the source element has a child &lt;low&gt; element, then the value of that element will be used.
+        /// If a &lt;low&gt; child element does not exist or there is no value for it, then the source elements 'value'
+        /// attribute will be used. If the source element also has no 'value' attribute, then <c>null</c> will be returned
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>The FHIR <see cref="Date"/> representation of the source element</returns>
+        public static Date ToFhirDate(this XElement self)
+        {
+            var lowValue = self
+                .Element(Defaults.DefaultNs + "low")?
+                .Attribute("value")?
+                .Value;
+
+            if (string.IsNullOrWhiteSpace(lowValue))
+            {
+                lowValue = self.Attribute("value")?.Value;
+                if (string.IsNullOrWhiteSpace(lowValue))
+                    return null;
+            }
+
+            return new Date(lowValue.ParseCCdaDateTime().ToString("yyyy-MM-dd"));
+        }
+
+        /// <summary>
         /// Converts an element into its FHIR <see cref="FhirDateTime"/> representation. The date is derived from one of
         /// two places. If the source element has a child &lt;low&gt; element, then the value of that element will be used.
         /// If a &lt;low&gt; child element does not exist or there is no value for it, then the source elements 'value'
