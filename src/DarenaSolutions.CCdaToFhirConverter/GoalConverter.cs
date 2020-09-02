@@ -75,9 +75,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 goal.Subject = new ResourceReference($"urn:uuid:{_patientId}");
 
                 var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
-                goal.StatusDate = effectiveTimeElement?
-                    .ToFhirDate()?
-                    .Value;
+                goal.StatusDateElement = effectiveTimeElement?.ToFhirDate();
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {

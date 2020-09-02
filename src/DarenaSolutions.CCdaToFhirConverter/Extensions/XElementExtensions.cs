@@ -291,7 +291,8 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     return null;
             }
 
-            return new Date(lowValue.ParseCCdaDateTime().ToString("yyyy-MM-dd"));
+            var parsedDate = lowValue.ParseCCdaDateTime();
+            return new Date(parsedDate.Year, parsedDate.Month, parsedDate.Day);
         }
 
         /// <summary>
