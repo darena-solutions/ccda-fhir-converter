@@ -109,6 +109,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var deviceConverter = new DeviceConverter(patientConverter.PatientId);
             deviceConverter.AddToBundle(bundle, devicesElements, _namespaceManager, cacheManager);
 
+            var goalXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.60']/../n1:entry/n1:observation";
+            var goalsElements = cCda.XPathSelectElements(goalXPath, _namespaceManager);
+            var goalConverter = new GoalConverter(patientConverter.PatientId);
+            goalConverter.AddToBundle(bundle, goalsElements, _namespaceManager, cacheManager);
+
             // Social History - Smoking Status
             var smokingStatusXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.17']/../" +
                 "/n1:entry/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.78']/..";
