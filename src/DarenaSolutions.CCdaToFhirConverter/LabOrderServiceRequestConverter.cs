@@ -89,6 +89,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 labOrder.Code = codeElement.ToCodeableConcept();
 
+                labOrder.Intent = RequestIntent.Order;
+
                 // Effective Date
                 var effectiveDateXPath = "n1:effectiveTime";
                 var elementEffectiveDate = element.XPathSelectElement(effectiveDateXPath, namespaceManager);
