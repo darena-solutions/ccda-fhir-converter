@@ -106,6 +106,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     FullUrl = $"urn:uuid:{id}",
                     Resource = labOrder
                 });
+
+                LabOrderId = id;
             }
         }
     }
