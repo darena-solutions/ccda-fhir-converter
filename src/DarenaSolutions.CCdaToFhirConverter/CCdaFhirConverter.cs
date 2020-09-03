@@ -121,6 +121,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var smokingStatusConverter = new SmokingStatusObservationConverter(patientConverter.PatientId);
             smokingStatusConverter.AddToBundle(bundle, smokingStatusElements, _namespaceManager, cacheManager);
 
+            var labOrderXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.10']/../n1:entry/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.44']/..";
+            var labOrderElements = cCda.XPathSelectElements(labOrderXPath, _namespaceManager);
+            var labOrderConverter = new LabOrderServiceRequestConverter(patientConverter.PatientId);
+            labOrderConverter.AddToBundle(bundle, labOrderElements, _namespaceManager, cacheManager);
+
             return bundle;
         }
     }
