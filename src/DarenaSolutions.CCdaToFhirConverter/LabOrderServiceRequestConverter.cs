@@ -41,7 +41,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var labOrder = new ServiceRequest()
                 {
                     Id = id,
-                    Meta = new Meta()
                 };
 
                 // Identifiers
