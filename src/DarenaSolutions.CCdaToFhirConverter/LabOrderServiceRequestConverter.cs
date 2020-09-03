@@ -12,6 +12,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// <inheritdoc />
     public class LabOrderServiceRequestConverter : IResourceConverter
     {
+        private readonly string _patientId;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="LabOrderServiceRequestConverter"/> class
         /// </summary>
@@ -20,10 +22,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
         {
             _patientId = patientId;
         }
-
-#pragma warning disable SA1201 // Elements should appear in the correct order
-        private readonly string _patientId;
-#pragma warning restore SA1201 // Elements should appear in the correct order
 
         /// <summary>
         /// Gets the id of the FHIR organization resource that was generated
@@ -45,8 +43,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     Id = id,
                     Meta = new Meta()
                 };
-
-                // labOrder.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/"));
 
                 // Identifiers
                 var identifierElements = element.Elements(Defaults.DefaultNs + "id");
@@ -97,9 +93,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var effectiveDateXPath = "n1:effectiveTime";
                 var elementEffectiveDate = element.XPathSelectElement(effectiveDateXPath, namespaceManager);
 
-                var effective = elementEffectiveDate?.ToFhirDateTime();
-                if (effective != null)
-                    labOrder.Occurrence = effective;
+                labOrder.Occurrence = elementEffectiveDate?.ToDateTimeElement();
 
                 // Subject
                 labOrder.Subject = new ResourceReference($"urn:uuid:{_patientId}");
