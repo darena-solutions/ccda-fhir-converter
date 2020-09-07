@@ -16,5 +16,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Constants
         /// The STDC namespace for a CCDA document
         /// </summary>
         public static readonly XNamespace SdtcNs = "urn:hl7-org:sdtc";
+
+        /// <summary>
+        /// The XsiNs namespace for a CCDA document
+        /// </summary>
+        public static readonly XNamespace XsiNs = "http://www.w3.org/2001/XMLSchema-instance";
     }
 }
