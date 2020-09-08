@@ -383,7 +383,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <param name="self">The result element</param>
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the list of elements</param>
         /// <returns>The FHIR <see cref="Observation.ReferenceRangeComponent"/> representation of the source element</returns>
-        public static Observation.ReferenceRangeComponent GetReferenceRangeComponent(
+        public static Observation.ReferenceRangeComponent ToObservationReferenceRange(
             this XElement self,
             XmlNamespaceManager namespaceManager)
         {

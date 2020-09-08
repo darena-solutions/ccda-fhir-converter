@@ -61,7 +61,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     new Coding()
                     {
                         System = "http://terminology.hl7.org/CodeSystem/observation-category",
-                        Code = "results"
+                        Code = "laboratory"
                     }
                 }
             };
@@ -141,7 +141,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     result.Value = resultValue;
                 }
 
-                Observation.ReferenceRangeComponent referenceRangeComponent = resultElement.GetReferenceRangeComponent(namespaceManager);
+                Observation.ReferenceRangeComponent referenceRangeComponent = resultElement.ToObservationReferenceRange(namespaceManager);
                 if (referenceRangeComponent != null)
                     result.ReferenceRange.Add(referenceRangeComponent);
             }
@@ -150,8 +150,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (string.IsNullOrWhiteSpace(valueElement.Value))
                     throw new InvalidOperationException($"No result value found in: {valueElement}");
 
-                CodeableConcept valueCodeableConcept = new CodeableConcept { Text = valueElement.Value };
-                result.Value = valueCodeableConcept;
+                result.Value = new CodeableConcept { Text = valueElement.Value };
             }
 
             result.Subject = new ResourceReference($"urn:uuid:{_patientId}");
