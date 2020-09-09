@@ -378,7 +378,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         }
 
         /// <summary>
-        /// This will return the Reference Range for a result.
+        /// This will return a reference range for a laboratory result observation.
         /// </summary>
         /// <param name="self">The result element</param>
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the list of elements</param>
@@ -394,7 +394,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             if (referenceRangeLowElement != null)
             {
                 referenceRangeComponent = new Observation.ReferenceRangeComponent();
-                referenceRangeComponent.Low = ToSimpleQuantity(referenceRangeLowElement);
+                referenceRangeComponent.Low = referenceRangeLowElement.ToSimpleQuantity();
             }
 
             var referenceRangeHighXPath = "n1:referenceRange/n1:observationRange/n1:value/n1:high";
@@ -405,25 +405,25 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 if (referenceRangeComponent == null)
                     referenceRangeComponent = new Observation.ReferenceRangeComponent();
 
-                referenceRangeComponent.High = ToSimpleQuantity(referenceRangeHighElement);
+                referenceRangeComponent.High = referenceRangeHighElement.ToSimpleQuantity();
             }
 
             return referenceRangeComponent;
         }
 
         /// <summary>
-        /// This will return the Reference Range Element for a result.
+        /// This will return the <see cref="SimpleQuantity"/> for a reference range element.
         /// </summary>
-        /// <param name="referenceRangeElement">The reference range element</param>
+        /// <param name="self">The reference range element</param>
         /// <returns>The FHIR <see cref="SimpleQuantity"/> representation of the source element</returns>
-        public static SimpleQuantity ToSimpleQuantity(XElement referenceRangeElement)
+        public static SimpleQuantity ToSimpleQuantity(this XElement self)
         {
-            var refRangeValue = referenceRangeElement.Attribute("value")?.Value;
+            var refRangeValue = self.Attribute("value")?.Value;
 
             if (!decimal.TryParse(refRangeValue, out var quantityValue))
-                throw new InvalidOperationException($"The reference range value is not numeric in: {referenceRangeElement}");
+                throw new InvalidOperationException($"The reference range value is not numeric in: {self}");
 
-            return new SimpleQuantity { Value = quantityValue, Unit = referenceRangeElement.Attribute("unit")?.Value };
+            return new SimpleQuantity { Value = quantityValue, Unit = self.Attribute("unit")?.Value };
         }
     }
 }
