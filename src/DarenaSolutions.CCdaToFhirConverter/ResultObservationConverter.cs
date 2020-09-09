@@ -43,8 +43,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var id = Guid.NewGuid().ToString();
             var result = new Observation()
             {
-                Id = id
+                Id = id,
+                Meta = new Meta()
             };
+
+            result.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"));
 
             // Identifiers
             var identifierElements = resultElement.Elements(Defaults.DefaultNs + "id");
