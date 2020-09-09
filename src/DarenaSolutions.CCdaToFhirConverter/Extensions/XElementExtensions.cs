@@ -380,7 +380,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <summary>
         /// This will return a reference range for a laboratory result observation.
         /// </summary>
-        /// <param name="self">The result element</param>
+        /// <param name="self">The source element</param>
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the list of elements</param>
         /// <returns>The FHIR <see cref="Observation.ReferenceRangeComponent"/> representation of the source element</returns>
         public static Observation.ReferenceRangeComponent ToObservationReferenceRange(
@@ -412,9 +412,9 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         }
 
         /// <summary>
-        /// This will return the <see cref="SimpleQuantity"/> for a reference range element.
+        /// Converts an element into its FHIR <see cref="SimpleQuantity" /> representation
         /// </summary>
-        /// <param name="self">The reference range element</param>
+        /// <param name="self">The source element</param>
         /// <returns>The FHIR <see cref="SimpleQuantity"/> representation of the source element</returns>
         public static SimpleQuantity ToSimpleQuantity(this XElement self)
         {

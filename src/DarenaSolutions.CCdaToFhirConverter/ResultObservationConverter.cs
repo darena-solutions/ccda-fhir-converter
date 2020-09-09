@@ -25,7 +25,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <summary>
-        /// Gets the id of the FHIR organization resource for laboratory result that was generated
+        /// Gets the id of the FHIR observation resource for laboratory result that was generated
         /// </summary>
         public string ResultId { get; private set; }
 
