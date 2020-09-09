@@ -131,6 +131,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var referralConverter = new ReferralServiceRequestConverter(patientConverter.PatientId);
             referralConverter.AddToBundle(bundle, referralElements, _namespaceManager, cacheManager);
 
+            var resultXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.3.1']/../n1:entry/n1:organizer/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.1']/..";
+            var resultElements = cCda.XPathSelectElements(resultXPath, _namespaceManager);
+            var resultConverter = new ResultListConverter(patientConverter.PatientId);
+            resultConverter.AddToBundle(bundle, resultElements, _namespaceManager, cacheManager);
+
             return bundle;
         }
     }

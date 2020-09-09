@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using Hl7.Fhir.Model;
 
@@ -373,6 +375,55 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 default:
                     return system;
             }
+        }
+
+        /// <summary>
+        /// This will return a reference range for a laboratory result observation.
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the list of elements</param>
+        /// <returns>The FHIR <see cref="Observation.ReferenceRangeComponent"/> representation of the source element</returns>
+        public static Observation.ReferenceRangeComponent ToObservationReferenceRange(
+            this XElement self,
+            XmlNamespaceManager namespaceManager)
+        {
+            var referenceRangeLowXPath = "n1:referenceRange/n1:observationRange/n1:value/n1:low";
+            var referenceRangeLowElement = self.XPathSelectElement(referenceRangeLowXPath, namespaceManager);
+            Observation.ReferenceRangeComponent referenceRangeComponent = null;
+
+            if (referenceRangeLowElement != null)
+            {
+                referenceRangeComponent = new Observation.ReferenceRangeComponent();
+                referenceRangeComponent.Low = referenceRangeLowElement.ToSimpleQuantity();
+            }
+
+            var referenceRangeHighXPath = "n1:referenceRange/n1:observationRange/n1:value/n1:high";
+            var referenceRangeHighElement = self.XPathSelectElement(referenceRangeHighXPath, namespaceManager);
+
+            if (referenceRangeHighElement != null)
+            {
+                if (referenceRangeComponent == null)
+                    referenceRangeComponent = new Observation.ReferenceRangeComponent();
+
+                referenceRangeComponent.High = referenceRangeHighElement.ToSimpleQuantity();
+            }
+
+            return referenceRangeComponent;
+        }
+
+        /// <summary>
+        /// Converts an element into its FHIR <see cref="SimpleQuantity" /> representation
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>The FHIR <see cref="SimpleQuantity"/> representation of the source element</returns>
+        public static SimpleQuantity ToSimpleQuantity(this XElement self)
+        {
+            var refRangeValue = self.Attribute("value")?.Value;
+
+            if (!decimal.TryParse(refRangeValue, out var quantityValue))
+                throw new InvalidOperationException($"The reference range value is not numeric in: {self}");
+
+            return new SimpleQuantity { Value = quantityValue, Unit = self.Attribute("unit")?.Value };
         }
     }
 }
