@@ -49,36 +49,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     device.Identifier.Add(identifierElement.ToIdentifier());
                 }
 
-                var playingDeviceCodeXPath = "n1:participant/n1:participantRole/n1:playingDevice/n1:code";
-                var playingDeviceCodeElement = element.XPathSelectElement(playingDeviceCodeXPath, namespaceManager);
+                var playingDeviceCodeableConcept = element
+                    .FindCodeElementWithTranslation("n1:participant/n1:participantRole/n1:playingDevice", namespaceManager)?
+                    .ToCodeableConcept();
 
-                if (playingDeviceCodeElement != null)
-                {
-                    var translationElement = playingDeviceCodeElement.Element(Defaults.DefaultNs + "translation");
-                    if (translationElement != null)
-                    {
-                        playingDeviceCodeElement = translationElement;
-                    }
-                }
-                else
-                {
+                if (playingDeviceCodeableConcept == null)
                     throw new InvalidOperationException($"No playing device code element was found in: {element}");
-                }
 
-                var playingDeviceCode = playingDeviceCodeElement
-                    .Attribute("code")?
-                    .Value;
-
-                var playingDeviceName = playingDeviceCodeElement
-                    .Attribute("displayName")?
-                    .Value;
-
+                var playingDeviceCoding = playingDeviceCodeableConcept.Coding.First();
                 var udiCarrierHumanReadableStringXPath = "n1:participant/n1:participantRole/n1:id";
                 var udiCarrierHumanReadableStringElement = element.XPathSelectElement(udiCarrierHumanReadableStringXPath, namespaceManager);
 
                 if (udiCarrierHumanReadableStringElement != null)
                 {
-                    if (string.IsNullOrWhiteSpace(playingDeviceCode))
+                    if (string.IsNullOrWhiteSpace(playingDeviceCoding.Code))
                         throw new InvalidOperationException($"If a udi carrier is found, then a device identifier must exist: {element}");
 
                     var udiCarrierHumanReadableString = udiCarrierHumanReadableStringElement
@@ -87,7 +71,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     Device.UdiCarrierComponent udiCarrierCcomponent = new Device.UdiCarrierComponent
                     {
-                        DeviceIdentifier = playingDeviceCode,
+                        DeviceIdentifier = playingDeviceCoding.Code,
                         CarrierHRF = !string.IsNullOrWhiteSpace(udiCarrierHumanReadableString) ? udiCarrierHumanReadableString : null
                     };
                     device.UdiCarrier.Add(udiCarrierCcomponent);
@@ -107,29 +91,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     device.Status = Device.FHIRDeviceStatus.Unknown;
                 }
 
-                if (!string.IsNullOrWhiteSpace(playingDeviceName))
+                if (!string.IsNullOrWhiteSpace(playingDeviceCoding.Display))
                 {
-                    device.DeviceName.Add(new Device.DeviceNameComponent { Name = playingDeviceName, Type = DeviceNameType.UserFriendlyName });
+                    device.DeviceName.Add(new Device.DeviceNameComponent { Name = playingDeviceCoding.Display, Type = DeviceNameType.UserFriendlyName });
                 }
 
-                var codeElement = element.Element(Defaults.DefaultNs + "code");
-                if (codeElement != null)
-                {
-                    var translationElement = codeElement.Element(Defaults.DefaultNs + "translation");
-                    if (translationElement != null)
-                    {
-                        codeElement = translationElement;
-                    }
-                }
-                else
-                {
+                var codeableConcept = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept();
+
+                if (codeableConcept == null)
                     throw new InvalidOperationException($"No code element was found in: {element}");
-                }
 
-                device.Type = codeElement.ToCodeableConcept();
-                device.Type.Text = codeElement.Attribute("displayName")?.Value;
+                device.Type = codeableConcept;
+                device.Type.Text = codeableConcept.Coding.First().Display;
                 device.Patient = new ResourceReference($"urn:uuid:{_patientId}");
-                device.DistinctIdentifier = playingDeviceCode;
+                device.DistinctIdentifier = playingDeviceCoding.Code;
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {

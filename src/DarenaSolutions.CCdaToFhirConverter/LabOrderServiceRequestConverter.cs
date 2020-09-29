@@ -75,19 +75,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
 
                 // Code
-                var codeXPath = "n1:code/n1:translation";
-                var codeElement = element.XPathSelectElement(codeXPath, namespaceManager);
-                if (codeElement == null)
-                {
-                    codeXPath = "n1:code";
-                    codeElement = element.XPathSelectElement(codeXPath, namespaceManager);
+                var codeableConcept = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept();
 
-                    if (codeElement == null)
-                        throw new InvalidOperationException($"Could not find code in: {element}");
-                }
+                if (codeableConcept == null)
+                    throw new InvalidOperationException($"Could not find code in: {element}");
 
-                labOrder.Code = codeElement.ToCodeableConcept();
-
+                labOrder.Code = codeableConcept;
                 labOrder.Intent = RequestIntent.Order;
 
                 // Effective Date

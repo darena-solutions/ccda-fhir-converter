@@ -51,33 +51,25 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     condition.Identifier.Add(identifierElement.ToIdentifier());
                 }
 
-                var codeElement = element
-                    .Element(Defaults.DefaultNs + "value")?
-                    .Element(Defaults.DefaultNs + "translation");
+                var codeableConcept = element
+                    .FindCodeElementWithTranslation(codeElementName: "value")?
+                    .ToCodeableConcept();
 
-                if (codeElement == null)
-                {
-                    codeElement = element.Element(Defaults.DefaultNs + "value");
-                    if (codeElement == null)
-                        throw new InvalidOperationException($"A condition code was not found in: {element}");
-                }
+                if (codeableConcept == null)
+                    throw new InvalidOperationException($"A condition code was not found in: {element}");
 
-                condition.Code = codeElement.ToCodeableConcept();
+                condition.Code = codeableConcept;
 
                 if (_category == ConditionCategory.Extensible)
                 {
-                    var categoryElement = element
-                        .Element(Defaults.DefaultNs + "code")?
-                        .Element(Defaults.DefaultNs + "translation");
+                    var categoryCodeableConcept = element
+                        .FindCodeElementWithTranslation()?
+                        .ToCodeableConcept();
 
-                    if (categoryElement == null)
-                    {
-                        categoryElement = element.Element(Defaults.DefaultNs + "code");
-                        if (categoryElement == null)
-                            throw new InvalidOperationException($"A condition category was not found in: {element}");
-                    }
+                    if (categoryCodeableConcept == null)
+                        throw new InvalidOperationException($"A condition category was not found in: {element}");
 
-                    condition.Category.Add(categoryElement.ToCodeableConcept());
+                    condition.Category.Add(categoryCodeableConcept);
                 }
                 else
                 {

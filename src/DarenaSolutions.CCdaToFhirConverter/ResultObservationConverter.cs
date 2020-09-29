@@ -91,18 +91,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             // Code
-            var codeXPath = "n1:code/n1:translation";
-            var codeElement = resultElement.XPathSelectElement(codeXPath, namespaceManager);
-            if (codeElement == null)
-            {
-                codeXPath = "n1:code";
-                codeElement = resultElement.XPathSelectElement(codeXPath, namespaceManager);
+            var codeableConcept = resultElement
+                .FindCodeElementWithTranslation()?
+                .ToCodeableConcept();
 
-                if (codeElement == null)
-                    throw new InvalidOperationException($"Could not find code in: {resultElement}");
-            }
+            if (codeableConcept == null)
+                throw new InvalidOperationException($"Could not find code in: {resultElement}");
 
-            result.Code = codeElement.ToCodeableConcept();
+            result.Code = codeableConcept;
 
             // Effective Date
             var effectiveDateXPath = "n1:effectiveTime";

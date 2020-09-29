@@ -62,21 +62,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     procedure.Status = EventStatus.Unknown;
                 }
 
-                var codeElement = element.Element(Defaults.DefaultNs + "code");
-                if (codeElement != null)
-                {
-                    var translationElement = codeElement.Element(Defaults.DefaultNs + "translation");
-                    if (translationElement != null)
-                    {
-                        codeElement = translationElement;
-                    }
-                }
-                else
-                {
-                    throw new InvalidOperationException($"No code element was found in: {element}");
-                }
+                var codeableConcept = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept();
 
-                procedure.Code = codeElement.ToCodeableConcept();
+                if (codeableConcept == null)
+                    throw new InvalidOperationException($"No code element was found in: {element}");
+
+                procedure.Code = codeableConcept;
                 procedure.Subject = new ResourceReference($"urn:uuid:{_patientId}");
 
                 var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
