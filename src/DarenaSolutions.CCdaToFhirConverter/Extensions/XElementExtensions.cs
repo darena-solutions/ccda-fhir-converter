@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -32,11 +34,29 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <returns>The FHIR <see cref="CodeableConcept"/> representation of the source element</returns>
         public static CodeableConcept ToCodeableConcept(this XElement self)
         {
-            return new CodeableConcept(
+            var codeableConcept = new CodeableConcept(
                 ConvertKnownSystemOid(self.Attribute("codeSystem")?.Value),
                 self.Attribute("code")?.Value.Trim(),
                 self.Attribute("displayName")?.Value,
                 null);
+
+            var coding = codeableConcept.Coding.First();
+            if (string.IsNullOrWhiteSpace(coding.Code))
+            {
+                var nullFlavorValue = self.Attribute("nullFlavor")?.Value;
+                if (!nullFlavorValue.IsValidNullFlavorValue())
+                    throw new InvalidOperationException($"The null flavor value '{nullFlavorValue}' is not recognized");
+
+                coding.CodeElement = new Code
+                {
+                    Extension = new List<Extension>
+                    {
+                        new Extension(Defaults.NullFlavorSystem, new Code(nullFlavorValue))
+                    }
+                };
+            }
+
+            return codeableConcept;
         }
 
         /// <summary>
@@ -503,6 +523,40 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             using var reader = self.CreateReader();
             reader.MoveToContent();
             return reader.ReadInnerXml();
+        }
+
+        /// <summary>
+        /// Converts a 'value' element which can be several possible types into its FHIR represented type. The type is determined
+        /// by reading the 'xsi:type' attribute of the 'value' element. Note that only 'value' elements will work with this
+        /// extension
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>The FHIR representation of the source element, based on reading the 'xsi:type' attribute</returns>
+        public static Element ToFhirElementBasedOnType(this XElement self)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            if (self.Name.LocalName != "value")
+                throw new ArgumentException("Only 'value' elements can be used with this extension");
+
+            var type = self.Attribute(Defaults.XsiNs + "type")?.Value?.ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(type))
+            {
+                throw new InvalidOperationException(
+                    $"A type could not be determined for the element with multiple possible types: {self}");
+            }
+
+            switch (type)
+            {
+                case "cd":
+                    // Concept Descriptor -> Codeable concept
+                    return self.ToCodeableConcept();
+                default:
+                    throw new InvalidOperationException(
+                        $"The type '{type}' is not recognized and cannot be converted to its FHIR represented " +
+                        $"type");
+            }
         }
     }
 }

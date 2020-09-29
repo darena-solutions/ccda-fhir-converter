@@ -141,6 +141,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var clinicalImpressionConverter = new ClinicalImpressionConverter(patientConverter.PatientId);
             clinicalImpressionConverter.AddToBundle(bundle, consultationNoteElements, _namespaceManager, cacheManager);
 
+            var functionalStatusXPath = "//n1:section/n1:code[@code='47420-5']/../n1:entry/n1:observation";
+            var functionalStatusElements = cCda.XPathSelectElements(functionalStatusXPath, _namespaceManager);
+            var functionalStatusConverter = new FunctionalStatusObservationConverter(patientConverter.PatientId);
+            functionalStatusConverter.AddToBundle(bundle, functionalStatusElements, _namespaceManager, cacheManager);
+
             return bundle;
         }
     }

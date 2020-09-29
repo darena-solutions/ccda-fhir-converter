@@ -85,7 +85,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     {
                         Extension = new List<Extension>
                         {
-                            new Extension("http://hl7.org/fhir/StructureDefinition/iso21090-nullFlavor", new Code(nullFlavorValue))
+                            new Extension(Defaults.NullFlavorSystem, new Code(nullFlavorValue))
                         }
                     };
                 }
