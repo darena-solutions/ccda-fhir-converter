@@ -40,18 +40,26 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var cacheManager = new ConvertedCacheManager();
 
-            var representedOrganizationXPath = "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:representedOrganization";
-            var representedOrganizationElements = cCda.XPathSelectElements(representedOrganizationXPath, _namespaceManager);
-            var representedOrganizationConverter = new RepresentedOrganizationConverter();
-            representedOrganizationConverter.AddToBundle(bundle, representedOrganizationElements, _namespaceManager, cacheManager);
+            T AddConversionToBundle<T>(string xPath, Func<T> factory)
+                where T : IResourceConverter
+            {
+                var elements = cCda.XPathSelectElements(xPath, _namespaceManager);
+                var converter = factory();
+                converter.AddToBundle(bundle, elements, _namespaceManager, cacheManager);
+
+                return converter;
+            }
+
+            var representedOrganizationConverter = AddConversionToBundle(
+                "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:representedOrganization",
+                () => new RepresentedOrganizationConverter());
 
             if (string.IsNullOrWhiteSpace(representedOrganizationConverter.OrganizationId))
                 throw new InvalidOperationException("A represented organization could not be found");
 
-            var patientXPath = "n1:ClinicalDocument/n1:recordTarget/n1:patientRole";
-            var patientElements = cCda.XPathSelectElements(patientXPath, _namespaceManager);
-            var patientConverter = new PatientConverter(representedOrganizationConverter.OrganizationId);
-            patientConverter.AddToBundle(bundle, patientElements, _namespaceManager, cacheManager);
+            var patientConverter = AddConversionToBundle(
+                "n1:ClinicalDocument/n1:recordTarget/n1:patientRole",
+                () => new PatientConverter(representedOrganizationConverter.OrganizationId));
 
             if (string.IsNullOrWhiteSpace(patientConverter.PatientId))
                 throw new InvalidOperationException("A patient could not be found");
@@ -60,91 +68,64 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 "//n1:component/n1:section/n1:templateId[@root='2.16.840.1.113883.10.20.22.2.6.1']/.." +
                 "/n1:entry/n1:act[n1:entryRelationship/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.7']]";
 
-            var allergyIntoleranceElements = cCda.XPathSelectElements(allergyIntoleranceXPath, _namespaceManager);
-            var allergyIntoleranceConverter = new AllergyIntoleranceConverter(patientConverter.PatientId);
-            allergyIntoleranceConverter.AddToBundle(bundle, allergyIntoleranceElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(allergyIntoleranceXPath, () => new AllergyIntoleranceConverter(patientConverter.PatientId));
 
             var medicationXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.1.1']/../n1:entry";
-            var medicationElements = cCda.XPathSelectElements(medicationXPath, _namespaceManager);
-            var medicationConverter = new MedicationConverter(patientConverter.PatientId);
-            medicationConverter.AddToBundle(bundle, medicationElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(medicationXPath, () => new MedicationConverter(patientConverter.PatientId));
 
             var encounterDiagnosisXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.22.1']/.." +
                 "/n1:entry/n1:encounter/n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation";
-            var encounterDiagnosisElements = cCda.XPathSelectElements(encounterDiagnosisXPath, _namespaceManager);
-            var encounterDiagnosisConverter = new ConditionConverter(patientConverter.PatientId, ConditionCategory.EncounterDiagnosis);
-            encounterDiagnosisConverter.AddToBundle(bundle, encounterDiagnosisElements, _namespaceManager, cacheManager);
+
+            AddConversionToBundle(encounterDiagnosisXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.EncounterDiagnosis));
 
             var healthConcernXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.58']/../n1:entry/n1:observation";
-            var healthConcernElements = cCda.XPathSelectElements(healthConcernXPath, _namespaceManager);
-            var healthConcernConverter = new ConditionConverter(patientConverter.PatientId, ConditionCategory.HealthConcern);
-            healthConcernConverter.AddToBundle(bundle, healthConcernElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(healthConcernXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.HealthConcern));
 
             var problemXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.5.1']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
-            var problemElements = cCda.XPathSelectElements(problemXPath, _namespaceManager);
-            var problemConverter = new ConditionConverter(patientConverter.PatientId, ConditionCategory.ProblemList);
-            problemConverter.AddToBundle(bundle, problemElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(problemXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.ProblemList));
 
             var immunizationXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.2.1']/../n1:entry/n1:substanceAdministration";
-            var immunizationElements = cCda.XPathSelectElements(immunizationXPath, _namespaceManager);
-            var immunizationConverter = new ImmunizationConverter(patientConverter.PatientId);
-            immunizationConverter.AddToBundle(bundle, immunizationElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(immunizationXPath, () => new ImmunizationConverter(patientConverter.PatientId));
 
             // Vital Signs - 1 entry - 1 organizer - 1 to many Components by Template Id
             var vitalSignsXPath =
                 "//n1:component/n1:section/n1:templateId[@root='2.16.840.1.113883.10.20.22.2.4.1']/.." +
                 "/n1:entry/n1:organizer/n1:component/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.27']/..";
 
-            var vitalSignsElements = cCda.XPathSelectElements(vitalSignsXPath, _namespaceManager);
-            var vitalSignsConverter = new VitalSignObservationConverter(patientConverter.PatientId);
-            vitalSignsConverter.AddToBundle(bundle, vitalSignsElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(vitalSignsXPath, () => new VitalSignObservationConverter(patientConverter.PatientId));
 
             var procedureXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.7.1']/../n1:entry/n1:procedure";
-            var proceduresElements = cCda.XPathSelectElements(procedureXPath, _namespaceManager);
-            var procedureConverter = new ProcedureConverter(patientConverter.PatientId);
-            procedureConverter.AddToBundle(bundle, proceduresElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(procedureXPath, () => new ProcedureConverter(patientConverter.PatientId));
 
-            var deviceXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.23']/../n1:entry/n1:procedure";
-            var devicesElements = cCda.XPathSelectElements(deviceXPath, _namespaceManager);
-            var deviceConverter = new DeviceConverter(patientConverter.PatientId);
-            deviceConverter.AddToBundle(bundle, devicesElements, _namespaceManager, cacheManager);
+            ////var deviceXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.23']/../n1:entry/n1:procedure";
+            ////AddConversionToBundle(deviceXPath, () => new DeviceConverter(patientConverter.PatientId));
 
             var goalXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.60']/../n1:entry/n1:observation";
-            var goalsElements = cCda.XPathSelectElements(goalXPath, _namespaceManager);
-            var goalConverter = new GoalConverter(patientConverter.PatientId);
-            goalConverter.AddToBundle(bundle, goalsElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(goalXPath, () => new GoalConverter(patientConverter.PatientId));
 
             // Social History - Smoking Status
             var smokingStatusXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.17']/../" +
                 "/n1:entry/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.78']/..";
-            var smokingStatusElements = cCda.XPathSelectElements(smokingStatusXPath, _namespaceManager);
-            var smokingStatusConverter = new SmokingStatusObservationConverter(patientConverter.PatientId);
-            smokingStatusConverter.AddToBundle(bundle, smokingStatusElements, _namespaceManager, cacheManager);
+
+            AddConversionToBundle(smokingStatusXPath, () => new SmokingStatusObservationConverter(patientConverter.PatientId));
 
             var labOrderXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.10']/../n1:entry/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.44']/..";
-            var labOrderElements = cCda.XPathSelectElements(labOrderXPath, _namespaceManager);
-            var labOrderConverter = new LabOrderServiceRequestConverter(patientConverter.PatientId);
-            labOrderConverter.AddToBundle(bundle, labOrderElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(labOrderXPath, () => new LabOrderServiceRequestConverter(patientConverter.PatientId));
 
             var referralXPath = "//n1:section/n1:code[@code='42349-1']/..";
-            var referralElements = cCda.XPathSelectElements(referralXPath, _namespaceManager);
-            var referralConverter = new ReferralCarePlanConverter(patientConverter.PatientId);
-            referralConverter.AddToBundle(bundle, referralElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(referralXPath, () => new ReferralCarePlanConverter(patientConverter.PatientId));
 
             var resultXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.3.1']/../n1:entry/n1:organizer/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.1']/..";
-            var resultElements = cCda.XPathSelectElements(resultXPath, _namespaceManager);
-            var resultConverter = new ResultListConverter(patientConverter.PatientId);
-            resultConverter.AddToBundle(bundle, resultElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(resultXPath, () => new ResultListConverter(patientConverter.PatientId));
 
             var consultationNotesXPath = "//n1:section/n1:code[@code='11488-4']/../n1:entry/n1:act";
-            var consultationNoteElements = cCda.XPathSelectElements(consultationNotesXPath, _namespaceManager);
-            var clinicalImpressionConverter = new ClinicalImpressionConverter(patientConverter.PatientId);
-            clinicalImpressionConverter.AddToBundle(bundle, consultationNoteElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(consultationNotesXPath, () => new ClinicalImpressionConverter(patientConverter.PatientId));
 
             var functionalStatusXPath = "//n1:section/n1:code[@code='47420-5']/../n1:entry/n1:observation";
-            var functionalStatusElements = cCda.XPathSelectElements(functionalStatusXPath, _namespaceManager);
-            var functionalStatusConverter = new FunctionalStatusObservationConverter(patientConverter.PatientId);
-            functionalStatusConverter.AddToBundle(bundle, functionalStatusElements, _namespaceManager, cacheManager);
+            AddConversionToBundle(functionalStatusXPath, () => new StatusObservationConverter(patientConverter.PatientId));
+
+            var mentalStatusXPath = "//n1:section/n1:code[@code='10190-7']/../n1:entry/n1:observation";
+            AddConversionToBundle(mentalStatusXPath, () => new StatusObservationConverter(patientConverter.PatientId));
 
             return bundle;
         }

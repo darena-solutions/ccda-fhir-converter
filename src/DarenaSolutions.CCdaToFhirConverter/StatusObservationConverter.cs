@@ -9,15 +9,15 @@ using Hl7.Fhir.Model;
 namespace DarenaSolutions.CCdaToFhirConverter
 {
     /// <inheritdoc />
-    public class FunctionalStatusObservationConverter : IResourceConverter
+    public class StatusObservationConverter : IResourceConverter
     {
         private readonly string _patientId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FunctionalStatusObservationConverter"/> class
+        /// Initializes a new instance of the <see cref="StatusObservationConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
-        public FunctionalStatusObservationConverter(string patientId)
+        public StatusObservationConverter(string patientId)
         {
             _patientId = patientId;
         }
@@ -56,7 +56,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .ToCodeableConcept();
 
                 if (observation.Code == null)
-                    throw new InvalidOperationException($"A code could not be found for the functional status: {element}");
+                    throw new InvalidOperationException($"A code could not be found for the status observation: {element}");
 
                 observation.Effective = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToDateTimeElement();
                 observation.Value = element.Element(Defaults.DefaultNs + "value")?.ToFhirElementBasedOnType();
