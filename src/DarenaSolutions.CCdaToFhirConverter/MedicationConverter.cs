@@ -57,23 +57,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
 
-                    var translationElement = manufacturedMaterialElement
-                        .Element(Defaults.DefaultNs + "code")?
-                        .Element(Defaults.DefaultNs + "translation");
+                    var codeableConcept = manufacturedMaterialElement
+                        .FindCodeElementWithTranslation()?
+                        .ToCodeableConcept();
 
-                    if (translationElement != null)
-                    {
-                        medication.Code = translationElement.ToCodeableConcept();
-                    }
-                    else
-                    {
-                        var codeElement = manufacturedMaterialElement.Element(Defaults.DefaultNs + "code");
-                        if (codeElement == null)
-                            throw new InvalidOperationException($"Could not find a medication code in: {manufacturedMaterialElement}");
+                    if (codeableConcept == null)
+                        throw new InvalidOperationException($"Could not find a medication code in: {manufacturedMaterialElement}");
 
-                        medication.Code = codeElement.ToCodeableConcept();
-                    }
-
+                    medication.Code = codeableConcept;
                     bundle.Entry.Add(new Bundle.EntryComponent
                     {
                         FullUrl = $"urn:uuid:{id}",

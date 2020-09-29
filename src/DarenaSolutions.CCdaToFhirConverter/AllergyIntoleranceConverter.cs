@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -89,19 +90,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     var effectiveTimeElement = observation.Element(Defaults.DefaultNs + "effectiveTime");
                     allergyIntolerance.Onset = effectiveTimeElement?.ToDateTimeElement();
 
-                    var substanceXPath = "n1:participant/n1:participantRole/n1:playingEntity/n1:code/n1:translation";
-                    var substanceElement = observation.XPathSelectElement(substanceXPath, namespaceManager);
-                    if (substanceElement == null)
-                    {
-                        substanceXPath = "n1:participant/n1:participantRole/n1:playingEntity/n1:code";
-                        substanceElement = observation.XPathSelectElement(substanceXPath, namespaceManager);
-                        if (substanceElement == null)
-                            throw new InvalidOperationException($"No substance element was found in: {observation}");
-                    }
+                    var reactionCodeableConcept = observation
+                        .FindCodeElementWithTranslation("n1:participant/n1:participantRole/n1:playingEntity", namespaceManager)?
+                        .ToCodeableConcept();
+
+                    if (reactionCodeableConcept == null)
+                        throw new InvalidOperationException($"No substance element was found in: {observation}");
 
                     var reaction = new AllergyIntolerance.ReactionComponent
                     {
-                        Substance = substanceElement.ToCodeableConcept()
+                        Substance = reactionCodeableConcept
                     };
 
                     var obsEntryRelationships = observation.Elements(Defaults.DefaultNs + "entryRelationship");
@@ -116,18 +114,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         switch (templateIdValue)
                         {
                             case "2.16.840.1.113883.10.20.22.4.9":
-                                var manifestationXPath = "n1:observation/n1:value/n1:translation";
-                                var manifestationElement = obsEntryRelationship.XPathSelectElement(manifestationXPath, namespaceManager);
-                                if (manifestationElement == null)
-                                {
-                                    manifestationXPath = "n1:observation/n1:value";
-                                    manifestationElement = obsEntryRelationship.XPathSelectElement(manifestationXPath, namespaceManager);
-                                    if (manifestationElement == null)
-                                        throw new InvalidOperationException($"No manifestation element was found in: {obsEntryRelationship}");
+                                var manifestationCodeableConcept = obsEntryRelationship
+                                    .FindCodeElementWithTranslation(
+                                        "n1:observation",
+                                        namespaceManager,
+                                        "value")?
+                                    .ToCodeableConcept();
 
-                                    reaction.Manifestation.Add(manifestationElement.ToCodeableConcept());
-                                }
+                                if (manifestationCodeableConcept == null)
+                                    throw new InvalidOperationException($"No manifestation element was found in: {obsEntryRelationship}");
 
+                                reaction.Manifestation.Add(manifestationCodeableConcept);
                                 var entryRelationshipEffectiveTimeElement = obsEntryRelationship
                                     .Element(Defaults.DefaultNs + "observation")?
                                     .Element(Defaults.DefaultNs + "effectiveTime");
@@ -136,22 +133,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                                 break;
                             case "2.16.840.1.113883.10.20.22.4.8":
-                                var severityXPath = "n1:observation/n1:value/n1:translation";
-                                var severityElement = obsEntryRelationship.XPathSelectElement(severityXPath, namespaceManager);
-                                if (severityElement == null)
-                                {
-                                    severityXPath = "n1:observation/n1:value";
-                                    severityElement = obsEntryRelationship.XPathSelectElement(severityXPath, namespaceManager);
-                                    if (severityElement == null)
-                                        throw new InvalidOperationException($"No severity element found in: {obsEntryRelationship}");
+                                var severityCodeableConcept = obsEntryRelationship
+                                    .FindCodeElementWithTranslation(
+                                        "n1:observation",
+                                        namespaceManager,
+                                        "value")?
+                                    .ToCodeableConcept();
 
-                                    var severityValue = severityElement.Attribute("displayName")?.Value;
-                                    var severity = EnumUtility.ParseLiteral<AllergyIntolerance.AllergyIntoleranceSeverity>(severityValue, true);
-                                    if (severity == null)
-                                        throw new InvalidOperationException($"Could not determine allergy intolerance severity from value '{severityValue}'");
+                                if (severityCodeableConcept == null)
+                                    throw new InvalidOperationException($"No severity element found in: {obsEntryRelationship}");
 
-                                    reaction.Severity = severity;
-                                }
+                                var severityDisplay = severityCodeableConcept.Coding.First().Display;
+                                var severity = EnumUtility.ParseLiteral<AllergyIntolerance.AllergyIntoleranceSeverity>(severityDisplay, true);
+                                if (severity == null)
+                                    throw new InvalidOperationException($"Could not determine allergy intolerance severity from value '{severityDisplay}'");
+
+                                reaction.Severity = severity;
 
                                 break;
                             default:

@@ -80,18 +80,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 };
 
                 // Code
-                var codeXPath = "n1:code/n1:translation";
-                var codeElement = element.XPathSelectElement(codeXPath, namespaceManager);
-                if (codeElement == null)
-                {
-                    codeXPath = "n1:code";
-                    codeElement = element.XPathSelectElement(codeXPath, namespaceManager);
+                var codeableConcept = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept();
 
-                    if (codeElement == null)
-                        throw new InvalidOperationException($"Could not determine the smoking status code: {element}");
-                }
+                if (codeableConcept == null)
+                    throw new InvalidOperationException($"Could not determine the smoking status code: {element}");
 
-                smokingStatus.Code = codeElement.ToCodeableConcept();
+                smokingStatus.Code = codeableConcept;
 
                 // Issued
                 var issuedDateXPath = "n1:effectiveTime";
