@@ -17,7 +17,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             return DateTimeOffset.ParseExact(
                 self,
-                "yyyyMMdd",
+                GetDateTimeFormatFromString(self),
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
         }
@@ -31,7 +31,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             return DateTime.ParseExact(
                 self,
-                "yyyyMMdd",
+                GetDateTimeFormatFromString(self),
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
         }
@@ -65,6 +65,24 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     return true;
                 default:
                     return false;
+            }
+        }
+
+        private static string GetDateTimeFormatFromString(string str)
+        {
+            if (str == null)
+                throw new ArgumentNullException(nameof(str));
+
+            switch (str.Length)
+            {
+                case 8:
+                    return "yyyyMMdd";
+                case 12:
+                    return "yyyyMMddHHmm";
+                case 14:
+                    return "yyyyMMddHHmmss";
+                default:
+                    throw new InvalidOperationException($"The datetime string '{str}' has an invalid length");
             }
         }
     }
