@@ -489,5 +489,39 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             return el;
         }
+
+        /// <summary>
+        /// Converts a 'value' element which can be several possible types into its FHIR represented type. The type is determined
+        /// by reading the 'xsi:type' attribute of the 'value' element. Note that only 'value' elements will work with this
+        /// extension
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>The FHIR representation of the source element, based on reading the 'xsi:type' attribute</returns>
+        public static Element ToFhirElementBasedOnType(this XElement self)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            if (self.Name.LocalName != "value")
+                throw new ArgumentException("Only 'value' elements can be used with this extension");
+
+            var type = self.Attribute(Defaults.XsiNs + "type")?.Value?.ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(type))
+            {
+                throw new InvalidOperationException(
+                    $"A type could not be determined for the element with multiple possible types: {self}");
+            }
+
+            switch (type)
+            {
+                case "cd":
+                    // Concept Descriptor -> Codeable concept
+                    return self.ToCodeableConcept();
+                default:
+                    throw new InvalidOperationException(
+                        $"The type '{type}' is not recognized and cannot be converted to its FHIR represented " +
+                        $"type");
+            }
+        }
     }
 }
