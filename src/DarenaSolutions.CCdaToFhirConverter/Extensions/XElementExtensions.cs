@@ -491,6 +491,21 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         }
 
         /// <summary>
+        /// Reads all inner content (including all descendants) and returns it as a string
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>All inner content including descendants and their tags</returns>
+        public static string GetContentsAsString(this XElement self)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            using var reader = self.CreateReader();
+            reader.MoveToContent();
+            return reader.ReadInnerXml();
+        }
+
+        /// <summary>
         /// Converts a 'value' element which can be several possible types into its FHIR represented type. The type is determined
         /// by reading the 'xsi:type' attribute of the 'value' element. Note that only 'value' elements will work with this
         /// extension
