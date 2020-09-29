@@ -425,5 +425,66 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             return new SimpleQuantity { Value = quantityValue, Unit = self.Attribute("unit")?.Value };
         }
+
+        /// <summary>
+        /// Loops through all child nodes of an element and returns the value of the first text node that is found
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>The value of the first text node of the element</returns>
+        public static string GetFirstTextNode(this XElement self)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            var nodes = self.Nodes();
+            foreach (var node in nodes)
+            {
+                if (!(node is XText textNode))
+                    continue;
+
+                return textNode.Value;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the code element in an element while also including the translation element. The translation element will
+        /// take precedence if it exists, otherwise, the code element will be returned if found
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <param name="initialXPath">Optionally provide an initial xpath to first run before applying the check for the
+        /// code and translation elements</param>
+        /// <param name="namespaceManager">Optionally provide a namespace manager. This is required if <paramref name="initialXPath"/>
+        /// is given</param>
+        /// <returns>The translation element or the code element in a given element. The translation element takes precedence,
+        /// so this is what will be returned if both translation and code elements are found</returns>
+        public static XElement FindCodeElementWithTranslation(
+            this XElement self,
+            string initialXPath = null,
+            XmlNamespaceManager namespaceManager = null)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            if (!string.IsNullOrWhiteSpace(initialXPath) && namespaceManager == null)
+            {
+                throw new ArgumentException(
+                    "If an initial xpath is provided, then a namespace manager must also be provided");
+            }
+
+            var initialEl = string.IsNullOrWhiteSpace(initialXPath)
+                ? self
+                : self.XPathSelectElement(initialXPath, namespaceManager);
+
+            var el = initialEl?
+                .Element(Defaults.DefaultNs + "code")?
+                .Element(Defaults.DefaultNs + "translation");
+
+            if (el == null)
+                el = initialEl?.Element(Defaults.DefaultNs + "code");
+
+            return el;
+        }
     }
 }
