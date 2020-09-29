@@ -9,15 +9,15 @@ using Hl7.Fhir.Model;
 namespace DarenaSolutions.CCdaToFhirConverter
 {
     /// <inheritdoc />
-    public class ClinicalImpressionConverter : IResourceConverter
+    public class ReferralCarePlanConverter : IResourceConverter
     {
         private readonly string _patientId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ClinicalImpressionConverter"/> class
+        /// Initializes a new instance of the <see cref="ReferralCarePlanConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
-        public ClinicalImpressionConverter(string patientId)
+        public ReferralCarePlanConverter(string patientId)
         {
             _patientId = patientId;
         }
@@ -32,31 +32,36 @@ namespace DarenaSolutions.CCdaToFhirConverter
             foreach (var element in elements)
             {
                 var id = Guid.NewGuid().ToString();
-                var clinicalImpression = new ClinicalImpression
+                var referral = new CarePlan
                 {
-                    Id = $"urn:uuid:{id}",
-                    Status = ClinicalImpression.ClinicalImpressionStatus.Completed,
+                    Id = id,
+                    Status = RequestStatus.Active,
+                    Intent = CarePlan.CarePlanIntent.Plan,
                     Subject = new ResourceReference($"urn:uuid:{_patientId}")
                 };
 
-                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
+                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
                 if (string.IsNullOrWhiteSpace(textEl))
-                    throw new InvalidOperationException($"Could not find any text for the clinical impression in: {element}");
+                    throw new InvalidOperationException($"Could not find any text for the referral in: {element}");
 
-                clinicalImpression.Note.Add(new Annotation
+                referral.Text = new Narrative
                 {
-                    Text = new Markdown(textEl)
-                });
+                    Div = textEl,
+                    Status = Narrative.NarrativeStatus.Generated
+                };
 
-                clinicalImpression.DateElement = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToFhirDateTime();
-                clinicalImpression.Code = element
+                var codeableConcept = element
                     .FindCodeElementWithTranslation()?
                     .ToCodeableConcept();
 
+                if (codeableConcept != null)
+                    referral.Category.Add(codeableConcept);
+
+                // Commit Resource
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {
                     FullUrl = $"urn:uuid:{id}",
-                    Resource = clinicalImpression
+                    Resource = referral
                 });
             }
         }

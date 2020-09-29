@@ -489,5 +489,20 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             return el;
         }
+
+        /// <summary>
+        /// Reads all inner content (including all descendants) and returns it as a string
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>All inner content including descendants and their tags</returns>
+        public static string GetContentsAsString(this XElement self)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            using var reader = self.CreateReader();
+            reader.MoveToContent();
+            return reader.ReadInnerXml();
+        }
     }
 }

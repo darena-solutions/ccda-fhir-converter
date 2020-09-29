@@ -126,9 +126,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var labOrderConverter = new LabOrderServiceRequestConverter(patientConverter.PatientId);
             labOrderConverter.AddToBundle(bundle, labOrderElements, _namespaceManager, cacheManager);
 
-            var referralXPath = "//n1:templateId[@root='1.3.6.1.4.1.19376.1.5.3.1.3.1']/..";
+            var referralXPath = "//n1:section/n1:code[@code='42349-1']/..";
             var referralElements = cCda.XPathSelectElements(referralXPath, _namespaceManager);
-            var referralConverter = new ReferralServiceRequestConverter(patientConverter.PatientId);
+            var referralConverter = new ReferralCarePlanConverter(patientConverter.PatientId);
             referralConverter.AddToBundle(bundle, referralElements, _namespaceManager, cacheManager);
 
             var resultXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.3.1']/../n1:entry/n1:organizer/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.1']/..";
