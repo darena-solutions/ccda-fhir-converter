@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -32,11 +34,29 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <returns>The FHIR <see cref="CodeableConcept"/> representation of the source element</returns>
         public static CodeableConcept ToCodeableConcept(this XElement self)
         {
-            return new CodeableConcept(
+            var codeableConcept = new CodeableConcept(
                 ConvertKnownSystemOid(self.Attribute("codeSystem")?.Value),
                 self.Attribute("code")?.Value.Trim(),
                 self.Attribute("displayName")?.Value,
                 null);
+
+            var coding = codeableConcept.Coding.First();
+            if (string.IsNullOrWhiteSpace(coding.Code))
+            {
+                var nullFlavorValue = self.Attribute("nullFlavor")?.Value;
+                if (!nullFlavorValue.IsValidNullFlavorValue())
+                    throw new InvalidOperationException($"The null flavor value '{nullFlavorValue}' is not recognized");
+
+                coding.CodeElement = new Code
+                {
+                    Extension = new List<Extension>
+                    {
+                        new Extension(Defaults.NullFlavorSystem, new Code(nullFlavorValue))
+                    }
+                };
+            }
+
+            return codeableConcept;
         }
 
         /// <summary>
