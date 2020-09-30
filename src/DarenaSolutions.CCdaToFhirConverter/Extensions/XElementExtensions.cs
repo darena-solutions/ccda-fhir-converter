@@ -552,6 +552,9 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case "cd":
                     // Concept Descriptor -> Codeable concept
                     return self.ToCodeableConcept();
+                case "st":
+                    // Character String -> String
+                    return new FhirString(self.GetFirstTextNode());
                 default:
                     throw new InvalidOperationException(
                         $"The type '{type}' is not recognized and cannot be converted to its FHIR represented " +
