@@ -34,7 +34,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var id = Guid.NewGuid().ToString();
                 var observation = new Observation
                 {
-                    Id = $"urn:uuid:{id}",
+                    Id = id,
                     Status = ObservationStatus.Final,
                     Subject = new ResourceReference($"urn:uuid:{_patientId}")
                 };

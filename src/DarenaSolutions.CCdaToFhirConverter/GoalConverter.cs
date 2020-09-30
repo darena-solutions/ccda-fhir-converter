@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
-using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
@@ -37,7 +35,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var goal = new Goal
                 {
                     Id = id,
-                    Meta = new Meta()
+                    Meta = new Meta(),
+                    Subject = new ResourceReference($"urn:uuid:{_patientId}"),
+                    LifecycleStatus = Goal.GoalLifecycleStatus.Active
                 };
 
                 goal.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-goal"));
@@ -48,34 +48,41 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     goal.Identifier.Add(identifierElement.ToIdentifier());
                 }
 
-                var statusCodeValue = element
-                    .Element(Defaults.DefaultNs + "statusCode")?
-                    .Attribute("code")?
-                    .Value;
+                var effectiveTime = element
+                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .ToDateTimeElement();
 
-                if (!string.IsNullOrWhiteSpace(statusCodeValue) && statusCodeValue.ToLowerInvariant().Equals("active"))
+                if (effectiveTime is Period period)
                 {
-                    goal.LifecycleStatus = Goal.GoalLifecycleStatus.Active;
+                    goal.Start = period.StartElement.ToDate();
+
+                    goal.Target.Add(new Goal.TargetComponent
+                    {
+                        Due = period.EndElement.ToDate()
+                    });
                 }
-                else
+                else if (effectiveTime is FhirDateTime dateTime)
                 {
-                    goal.LifecycleStatus = Goal.GoalLifecycleStatus.Proposed;
+                    goal.Start = dateTime.ToDate();
                 }
 
-                var valueElementText = element.Element(Defaults.DefaultNs + "value")?.Value;
-                if (string.IsNullOrWhiteSpace(valueElementText))
-                    throw new InvalidOperationException($"No value element was found in: {element}");
+                var descriptionEl = element.Element(Defaults.DefaultNs + "value");
+                var description = descriptionEl?.ToFhirElementBasedOnType();
 
-                CodeableConcept valueCodeableConcept = new CodeableConcept
+                if (description == null)
+                    throw new InvalidOperationException($"The goal description could not be found in: {element}");
+
+                if (!(description is FhirString descriptionStr))
                 {
-                    Text = valueElementText
+                    throw new InvalidOperationException(
+                        $"The goal description is expected to be a plain text value. However, an unrecognized " +
+                        $"value was found in: {description}");
+                }
+
+                goal.Description = new CodeableConcept
+                {
+                    Text = descriptionStr.Value
                 };
-                goal.Description = valueCodeableConcept;
-                goal.Target.Add(new Goal.TargetComponent { Measure = valueCodeableConcept });
-                goal.Subject = new ResourceReference($"urn:uuid:{_patientId}");
-
-                var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
-                goal.StatusDateElement = effectiveTimeElement?.ToFhirDate();
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {

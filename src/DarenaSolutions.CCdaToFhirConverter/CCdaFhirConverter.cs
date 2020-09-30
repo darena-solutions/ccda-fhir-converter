@@ -100,7 +100,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var deviceXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.23']/../n1:entry/n1:procedure";
             AddConversionToBundle(deviceXPath, () => new DeviceConverter(patientConverter.PatientId));
 
-            var goalXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.60']/../n1:entry/n1:observation";
+            var goalXPath = "//n1:section/n1:code[@code='61146-7']/../n1:entry/n1:observation";
             AddConversionToBundle(goalXPath, () => new GoalConverter(patientConverter.PatientId));
 
             // Social History - Smoking Status

@@ -34,7 +34,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var id = Guid.NewGuid().ToString();
                 var clinicalImpression = new ClinicalImpression
                 {
-                    Id = $"urn:uuid:{id}",
+                    Id = id,
                     Status = ClinicalImpression.ClinicalImpressionStatus.Completed,
                     Subject = new ResourceReference($"urn:uuid:{_patientId}")
                 };

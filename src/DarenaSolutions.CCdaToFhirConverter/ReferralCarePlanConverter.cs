@@ -34,7 +34,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var id = Guid.NewGuid().ToString();
                 var referral = new CarePlan
                 {
-                    Id = $"urn:uuid:{id}",
+                    Id = id,
                     Status = RequestStatus.Active,
                     Intent = CarePlan.CarePlanIntent.Plan,
                     Subject = new ResourceReference($"urn:uuid:{_patientId}")
