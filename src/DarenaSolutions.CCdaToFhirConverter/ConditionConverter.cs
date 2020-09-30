@@ -40,7 +40,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 {
                     Id = id,
                     Meta = new Meta(),
-                    Subject = new ResourceReference($"urn:uuid:{_patientId}")
+                    Subject = new ResourceReference($"urn:uuid:{_patientId}"),
+                    VerificationStatus = new CodeableConcept(
+                        "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+                        "confirmed",
+                        "Confirmed",
+                        null),
+                    ClinicalStatus = new CodeableConcept(
+                        "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                        "active",
+                        "Active",
+                        null)
                 };
 
                 condition.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"));
@@ -52,7 +62,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
 
                 var codeableConcept = element
-                    .FindCodeElementWithTranslation(codeElementName: "value")?
+                    .FindCodeElementWithTranslation()?
                     .ToCodeableConcept();
 
                 if (codeableConcept == null)
@@ -73,7 +83,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
                 else
                 {
-                    var categoryCoding = new Coding()
+                    var categoryCoding = new Coding
                     {
                         System = "http://terminology.hl7.org/CodeSystem/condition-category"
                     };
@@ -94,17 +104,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
                             break;
                     }
 
-                    condition.Category.Add(new CodeableConcept()
+                    condition.Category.Add(new CodeableConcept
                     {
-                        Coding = new List<Coding>()
+                        Coding = new List<Coding>
                         {
                             categoryCoding
                         }
                     });
                 }
 
-                var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
-                condition.Onset = effectiveTimeElement?.ToDateTimeElement();
+                condition.Onset = element
+                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .ToDateTimeElement();
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {
