@@ -9,15 +9,15 @@ using Hl7.Fhir.Model;
 namespace DarenaSolutions.CCdaToFhirConverter
 {
     /// <inheritdoc />
-    public class ReferralCarePlanConverter : IResourceConverter
+    public class TextSpecificCarePlanConverter : IResourceConverter
     {
         private readonly string _patientId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReferralCarePlanConverter"/> class
+        /// Initializes a new instance of the <see cref="TextSpecificCarePlanConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
-        public ReferralCarePlanConverter(string patientId)
+        public TextSpecificCarePlanConverter(string patientId)
         {
             _patientId = patientId;
         }
