@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Enums;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
@@ -40,25 +41,70 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 {
                     Id = id,
                     Meta = new Meta(),
-                    Subject = new ResourceReference($"urn:uuid:{_patientId}")
+                    Subject = new ResourceReference($"urn:uuid:{_patientId}"),
+                    VerificationStatus = new CodeableConcept(
+                        "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+                        "confirmed",
+                        "Confirmed",
+                        null),
+                    ClinicalStatus = new CodeableConcept(
+                        "http://terminology.hl7.org/CodeSystem/condition-clinical",
+                        "active",
+                        "Active",
+                        null)
                 };
 
                 condition.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"));
 
+                var alreadyAdded = false;
                 var identifierElements = element.Elements(Defaults.DefaultNs + "id");
                 foreach (var identifierElement in identifierElements)
                 {
-                    condition.Identifier.Add(identifierElement.ToIdentifier());
+                    var identifier = identifierElement.ToIdentifier();
+                    if (cacheManager.Contains(ResourceType.Condition, identifier.System, identifier.Value))
+                    {
+                        alreadyAdded = true;
+                        break;
+                    }
+
+                    condition.Identifier.Add(identifier);
+                    cacheManager.Add(condition, identifier.System, identifier.Value);
                 }
 
-                var codeableConcept = element
-                    .FindCodeElementWithTranslation(codeElementName: "value")?
-                    .ToCodeableConcept();
+                if (alreadyAdded)
+                    continue;
 
-                if (codeableConcept == null)
-                    throw new InvalidOperationException($"A condition code was not found in: {element}");
+                if (_category == ConditionCategory.HealthConcern)
+                {
+                    // Get the value from the observation element
+                    var xPath = "../../n1:entry/n1:observation";
+                    var observationEl = element.XPathSelectElement(xPath, namespaceManager);
 
-                condition.Code = codeableConcept;
+                    if (observationEl == null)
+                        throw new InvalidOperationException($"A condition code was not found for the health concern: {element}");
+
+                    var valueEl = observationEl
+                        .Element(Defaults.DefaultNs + "value")?
+                        .ToFhirElementBasedOnType();
+
+                    if (!(valueEl is CodeableConcept codeableConcept))
+                    {
+                        throw new InvalidOperationException(
+                            $"Expected the condition code for the health concern to be a codeable concept, however " +
+                            $"the value type is not recognized: {observationEl}");
+                    }
+
+                    condition.Code = codeableConcept;
+                }
+                else
+                {
+                    condition.Code = element
+                        .FindCodeElementWithTranslation()?
+                        .ToCodeableConcept();
+
+                    if (condition.Code == null)
+                        throw new InvalidOperationException($"A condition code was not found in: {element}");
+                }
 
                 if (_category == ConditionCategory.Extensible)
                 {
@@ -73,7 +119,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
                 else
                 {
-                    var categoryCoding = new Coding()
+                    var categoryCoding = new Coding
                     {
                         System = "http://terminology.hl7.org/CodeSystem/condition-category"
                     };
@@ -94,17 +140,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
                             break;
                     }
 
-                    condition.Category.Add(new CodeableConcept()
+                    condition.Category.Add(new CodeableConcept
                     {
-                        Coding = new List<Coding>()
+                        Coding = new List<Coding>
                         {
                             categoryCoding
                         }
                     });
                 }
 
-                var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
-                condition.Onset = effectiveTimeElement?.ToDateTimeElement();
+                condition.Onset = element
+                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .ToDateTimeElement();
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {

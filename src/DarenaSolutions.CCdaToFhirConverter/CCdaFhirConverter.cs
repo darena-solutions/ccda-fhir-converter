@@ -78,8 +78,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             AddConversionToBundle(encounterDiagnosisXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.EncounterDiagnosis));
 
-            var healthConcernXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.58']/../n1:entry/n1:observation";
+            var healthConcernXPath = "//n1:section/n1:code[@code='75310-3']/../n1:entry/n1:act";
             AddConversionToBundle(healthConcernXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.HealthConcern));
+
+            var healthConcernObservationXPath = "//n1:section/n1:code[@code='75310-3']/../n1:entry/n1:observation";
+            AddConversionToBundle(healthConcernObservationXPath, () => new StatusObservationConverter(patientConverter.PatientId));
 
             var problemXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.5.1']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
             AddConversionToBundle(problemXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.ProblemList));
