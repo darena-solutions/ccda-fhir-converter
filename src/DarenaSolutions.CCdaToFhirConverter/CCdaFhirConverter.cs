@@ -97,7 +97,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             AddConversionToBundle(vitalSignsXPath, () => new VitalSignObservationConverter(patientConverter.PatientId));
 
-            var procedureXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.7.1']/../n1:entry/n1:procedure";
+            var procedureXPath = "//n1:section/n1:code[@code='47519-4']/../n1:entry/n1:procedure";
             AddConversionToBundle(procedureXPath, () => new ProcedureConverter(patientConverter.PatientId));
 
             var deviceXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.23']/../n1:entry/n1:procedure";
