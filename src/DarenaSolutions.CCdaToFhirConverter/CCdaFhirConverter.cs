@@ -115,8 +115,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var referralXPath = "//n1:section/n1:code[@code='42349-1']/..";
             AddConversionToBundle(referralXPath, () => new ReferralCarePlanConverter(patientConverter.PatientId));
 
-            var resultXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.3.1']/../n1:entry/n1:organizer/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.1']/..";
-            AddConversionToBundle(resultXPath, () => new ResultListConverter(patientConverter.PatientId));
+            var resultXPath = "//n1:section/n1:code[@code='30954-2']/../n1:entry/n1:organizer/n1:component/n1:observation";
+            AddConversionToBundle(resultXPath, () => new ResultObservationConverter(patientConverter.PatientId));
 
             var consultationNotesXPath = "//n1:section/n1:code[@code='11488-4']/../n1:entry/n1:act";
             AddConversionToBundle(consultationNotesXPath, () => new ClinicalImpressionConverter(patientConverter.PatientId));
