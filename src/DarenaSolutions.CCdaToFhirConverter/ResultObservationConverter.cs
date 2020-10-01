@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
@@ -24,11 +22,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
             _patientId = patientId;
         }
 
-        /// <summary>
-        /// Gets the id of the FHIR observation resource for laboratory result that was generated
-        /// </summary>
-        public string ResultId { get; private set; }
-
         /// <inheritdoc />
         public void AddToBundle(
             Bundle bundle,
@@ -36,132 +29,64 @@ namespace DarenaSolutions.CCdaToFhirConverter
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var resultElement = elements.FirstOrDefault();
-            if (resultElement == null)
-                return;
-
-            var id = Guid.NewGuid().ToString();
-            var result = new Observation()
+            foreach (var element in elements)
             {
-                Id = id,
-                Meta = new Meta()
-            };
-
-            result.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"));
-
-            // Identifiers
-            var identifierElements = resultElement.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                result.Identifier.Add(identifierElement.ToIdentifier());
-            }
-
-            // Category
-            var codeConcept = new CodeableConcept
-            {
-                Coding = new List<Coding>()
+                var id = Guid.NewGuid().ToString();
+                var result = new Observation
                 {
-                    new Coding()
+                    Id = id,
+                    Meta = new Meta(),
+                    Status = ObservationStatus.Final,
+                    Subject = new ResourceReference($"urn:uuid:{_patientId}")
+                };
+
+                result.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"));
+
+                // Identifiers
+                var identifierElements = element.Elements(Defaults.DefaultNs + "id");
+                foreach (var identifierElement in identifierElements)
+                {
+                    result.Identifier.Add(identifierElement.ToIdentifier());
+                }
+
+                // Category
+                var codeConcept = new CodeableConcept
+                {
+                    Coding = new List<Coding>
+                {
+                    new Coding
                     {
                         System = "http://terminology.hl7.org/CodeSystem/observation-category",
                         Code = "laboratory"
                     }
                 }
-            };
+                };
 
-            result.Category = new List<CodeableConcept>()
-            {
-                codeConcept
-            };
+                result.Category.Add(codeConcept);
 
-            // Status
-            var statusCodeXPath = "n1:statusCode";
-            var statusCode = resultElement
-                .XPathSelectElement(statusCodeXPath, namespaceManager)?
-                .Attribute("code")?
-                .Value;
+                // Code
+                result.Code = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept();
 
-            if (!string.IsNullOrWhiteSpace(statusCode) && statusCode.ToLowerInvariant().Equals("completed"))
-            {
-                result.Status = ObservationStatus.Final;
-            }
-            else
-            {
-                result.Status = ObservationStatus.Unknown;
-            }
+                if (result.Code == null)
+                    throw new InvalidOperationException($"Could not find code in: {element}");
 
-            // Code
-            var codeableConcept = resultElement
-                .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                result.Effective = element
+                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .ToDateTimeElement();
 
-            if (codeableConcept == null)
-                throw new InvalidOperationException($"Could not find code in: {resultElement}");
+                result.Value = element
+                    .Element(Defaults.DefaultNs + "value")?
+                    .ToFhirElementBasedOnType();
 
-            result.Code = codeableConcept;
-
-            // Effective Date
-            var effectiveDateXPath = "n1:effectiveTime";
-            var elementEffectiveDate = resultElement.XPathSelectElement(effectiveDateXPath, namespaceManager);
-
-            result.Effective = elementEffectiveDate?.ToDateTimeElement();
-            if (result.Effective == null)
-                throw new InvalidOperationException($"Could not determine the result's effective date in: {resultElement}");
-
-            // Value
-            var valueXPath = "n1:value";
-            var valueElement = resultElement.XPathSelectElement(valueXPath, namespaceManager);
-
-            if (valueElement == null)
-                throw new InvalidOperationException($"Could not determine the result's result in: {resultElement}");
-
-            var valueType = valueElement.Attribute(Defaults.XsiNs + "type")?.Value;
-            if (string.IsNullOrWhiteSpace(valueType))
-                throw new InvalidOperationException($"Could not determine the result's type in: {valueElement}");
-
-            if (valueType.ToLowerInvariant().Equals("pq"))
-            {
-                var value = valueElement.Attribute("value")?.Value;
-                if (string.IsNullOrWhiteSpace(value))
-                    throw new InvalidOperationException($"No result value found in: {valueElement}");
-
-                if (decimal.TryParse(value, out var quantityValue))
+                // Commit Resource
+                bundle.Entry.Add(new Bundle.EntryComponent
                 {
-                    var unit = valueElement.Attribute("unit")?.Value;
-
-                    var resultValue = new Quantity();
-                    resultValue.Value = quantityValue;
-
-                    if (!string.IsNullOrWhiteSpace(unit))
-                    {
-                        resultValue.Unit = unit;
-                    }
-
-                    result.Value = resultValue;
-                }
-
-                Observation.ReferenceRangeComponent referenceRangeComponent = resultElement.ToObservationReferenceRange(namespaceManager);
-                if (referenceRangeComponent != null)
-                    result.ReferenceRange.Add(referenceRangeComponent);
+                    FullUrl = $"urn:uuid:{id}",
+                    Resource = result
+                });
             }
-            else if (valueType.ToLowerInvariant().Equals("st"))
-            {
-                if (string.IsNullOrWhiteSpace(valueElement.Value))
-                    throw new InvalidOperationException($"No result value found in: {valueElement}");
-
-                result.Value = new CodeableConcept { Text = valueElement.Value };
-            }
-
-            result.Subject = new ResourceReference($"urn:uuid:{_patientId}");
-
-            // Commit Resource
-            bundle.Entry.Add(new Bundle.EntryComponent
-            {
-                FullUrl = $"urn:uuid:{id}",
-                Resource = result
-            });
-
-            ResultId = id;
         }
     }
 }

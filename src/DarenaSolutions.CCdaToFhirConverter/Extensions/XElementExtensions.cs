@@ -44,16 +44,20 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             if (string.IsNullOrWhiteSpace(coding.Code))
             {
                 var nullFlavorValue = self.Attribute("nullFlavor")?.Value;
-                if (!nullFlavorValue.IsValidNullFlavorValue())
-                    throw new InvalidOperationException($"The null flavor value '{nullFlavorValue}' is not recognized");
 
-                coding.CodeElement = new Code
+                if (!string.IsNullOrWhiteSpace(nullFlavorValue))
                 {
-                    Extension = new List<Extension>
+                    if (!nullFlavorValue.IsValidNullFlavorValue())
+                        throw new InvalidOperationException($"The null flavor value '{nullFlavorValue}' is not recognized");
+
+                    coding.CodeElement = new Code
                     {
-                        new Extension(Defaults.NullFlavorSystem, new Code(nullFlavorValue))
-                    }
-                };
+                        Extension = new List<Extension>
+                        {
+                            new Extension(Defaults.NullFlavorSystem, new Code(nullFlavorValue))
+                        }
+                    };
+                }
             }
 
             return codeableConcept;
@@ -438,12 +442,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <returns>The FHIR <see cref="SimpleQuantity"/> representation of the source element</returns>
         public static SimpleQuantity ToSimpleQuantity(this XElement self)
         {
-            var refRangeValue = self.Attribute("value")?.Value;
+            var value = self.Attribute("value")?.Value;
 
-            if (!decimal.TryParse(refRangeValue, out var quantityValue))
-                throw new InvalidOperationException($"The reference range value is not numeric in: {self}");
+            if (!decimal.TryParse(value, out var dValue))
+                throw new InvalidOperationException($"The quantity value could not be parsed into a decimal in: {self}");
 
-            return new SimpleQuantity { Value = quantityValue, Unit = self.Attribute("unit")?.Value };
+            return new SimpleQuantity { Value = dValue, Unit = self.Attribute("unit")?.Value };
         }
 
         /// <summary>
@@ -552,6 +556,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case "cd":
                     // Concept Descriptor -> Codeable concept
                     return self.ToCodeableConcept();
+                case "st":
+                    // Character String -> String
+                    return new FhirString(self.GetFirstTextNode());
+                case "pq":
+                    // Dimensioned Quantity -> Simple quantity
+                    return self.ToSimpleQuantity();
                 default:
                     throw new InvalidOperationException(
                         $"The type '{type}' is not recognized and cannot be converted to its FHIR represented " +
