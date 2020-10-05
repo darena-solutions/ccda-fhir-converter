@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -9,113 +10,42 @@ using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class SmokingStatusObservationConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts smoking status elements into FHIR observation resources
+    /// </summary>
+    public class SmokingStatusObservationConverter : BaseObservationConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SmokingStatusObservationConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public SmokingStatusObservationConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
-            Bundle bundle,
-            IEnumerable<XElement> elements,
-            XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+        protected override void CustomizeMapping(XElement element, Observation observation)
         {
-            foreach (var element in elements)
+            observation.Meta = new Meta();
+            observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-smokingstatus"));
+
+            observation
+                .Category
+                .First()
+                .Coding
+                .First()
+                .Code = "social-history";
+
+            if (!(observation.Effective is FhirDateTime dateTimeElement))
             {
-                var id = Guid.NewGuid().ToString();
-                var smokingStatus = new Observation()
-                {
-                    Id = id,
-                    Meta = new Meta(),
-                    Subject = new ResourceReference($"urn:uuid:{_patientId}")
-                };
-
-                // Meta
-                smokingStatus.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-smokingstatus"));
-
-                // Identifiers
-                var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-                foreach (var identifierElement in identifierElements)
-                {
-                    smokingStatus.Identifier.Add(identifierElement.ToIdentifier());
-                }
-
-                // Status
-                var statusCodeXPath = "n1:statusCode";
-                var statusCode = element
-                    .XPathSelectElement(statusCodeXPath, namespaceManager)?
-                    .Attribute("code")?
-                    .Value;
-
-                if (string.Compare(statusCode, "completed", StringComparison.InvariantCultureIgnoreCase) != 0)
-                    throw new InvalidOperationException($"Could not determine the smoking status: {element}");
-
-                smokingStatus.Status = ObservationStatus.Final;
-
-                // Category
-                smokingStatus.Category = new List<CodeableConcept>()
-                {
-                    new CodeableConcept()
-                    {
-                        Coding = new List<Coding>()
-                        {
-                            new Coding()
-                            {
-                                System = "http://terminology.hl7.org/CodeSystem/observation-category",
-                                Code = "social-history",
-                                Display = "Social History"
-                            }
-                        }
-                    }
-                };
-
-                // Code
-                var codeableConcept = element
-                    .FindCodeElementWithTranslation()?
-                    .ToCodeableConcept();
-
-                if (codeableConcept == null)
-                    throw new InvalidOperationException($"Could not determine the smoking status code: {element}");
-
-                smokingStatus.Code = codeableConcept;
-
-                // Issued
-                var issuedDateXPath = "n1:effectiveTime";
-                var issuedDate = element.XPathSelectElement(issuedDateXPath, namespaceManager);
-                smokingStatus.Issued = issuedDate?.ToFhirDateTime().ToDateTimeOffset(TimeSpan.Zero);
-
-                if (smokingStatus.Issued == null)
-                    throw new InvalidOperationException($"Could not determine the smoking status documented date: {element}");
-
-                // Effective Date
-                smokingStatus.Effective = issuedDate.ToDateTimeElement();
-
-                // Value
-                var valueXPath = "n1:value";
-                var valueElement = element.XPathSelectElement(valueXPath, namespaceManager);
-
-                if (valueElement == null)
-                    throw new InvalidOperationException($"Could not determine the smoking status documented value: {element}");
-
-                smokingStatus.Value = valueElement.ToCodeableConcept();
-
-                // Commit Resource
-                bundle.Entry.Add(new Bundle.EntryComponent
-                {
-                    FullUrl = $"urn:uuid:{id}",
-                    Resource = smokingStatus
-                });
+                throw new InvalidOperationException(
+                    $"Expected the issued datetime to be a datetime, however, the issued value is of type " +
+                    $"{observation.Effective.GetType().Name}");
             }
+
+            observation.Effective = null;
+            observation.Issued = dateTimeElement.ToDateTimeOffset(TimeSpan.Zero);
         }
     }
 }

@@ -90,11 +90,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var immunizationXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.2.1']/../n1:entry/n1:substanceAdministration";
             AddConversionToBundle(immunizationXPath, () => new ImmunizationConverter(patientConverter.PatientId));
 
-            // Vital Signs - 1 entry - 1 organizer - 1 to many Components by Template Id
-            var vitalSignsXPath =
-                "//n1:component/n1:section/n1:templateId[@root='2.16.840.1.113883.10.20.22.2.4.1']/.." +
-                "/n1:entry/n1:organizer/n1:component/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.27']/..";
-
+            // Vital Signs
+            var vitalSignsXPath = "//n1:section/n1:code[@code='8716-3']/../n1:entry/n1:organizer/n1:component/n1:observation";
             AddConversionToBundle(vitalSignsXPath, () => new VitalSignObservationConverter(patientConverter.PatientId));
 
             var procedureXPath = "//n1:section/n1:code[@code='47519-4']/../n1:entry/n1:procedure";
@@ -107,9 +104,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             AddConversionToBundle(goalXPath, () => new GoalConverter(patientConverter.PatientId));
 
             // Social History - Smoking Status
-            var smokingStatusXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.17']/../" +
-                "/n1:entry/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.78']/..";
-
+            var smokingStatusXPath = "//n1:section/n1:code[@code='29762-2']/../n1:entry/n1:observation/n1:code[@code='72166-2']/..";
             AddConversionToBundle(smokingStatusXPath, () => new SmokingStatusObservationConverter(patientConverter.PatientId));
 
             var labOrderXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.10']/../n1:entry/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.44']/..";
