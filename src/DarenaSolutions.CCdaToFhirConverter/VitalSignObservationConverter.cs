@@ -1,167 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Xml;
+﻿using System.Linq;
 using System.Xml.Linq;
-using System.Xml.XPath;
-using DarenaSolutions.CCdaToFhirConverter.Constants;
-using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class VitalSignObservationConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts vital signs into FHIR observation resources
+    /// </summary>
+    public class VitalSignObservationConverter : BaseObservationConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="VitalSignObservationConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public VitalSignObservationConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
-            Bundle bundle,
-            IEnumerable<XElement> elements,
-            XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+        protected override void CustomizeMapping(XElement element, Observation observation)
         {
-            foreach (var element in elements)
-            {
-                var id = Guid.NewGuid().ToString();
-                var vitalSign = new Observation()
-                {
-                    Id = id,
-                    Meta = new Meta()
-                };
+            observation.Meta = new Meta();
+            observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
 
-                // Meta
-                vitalSign.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
-
-                // Identifiers
-                var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-                foreach (var identifierElement in identifierElements)
-                {
-                    vitalSign.Identifier.Add(identifierElement.ToIdentifier());
-                }
-
-                // Category
-                var codeConcept = new CodeableConcept
-                {
-                    Coding = new List<Coding>()
-                        {
-                            new Coding()
-                            {
-                                System = "http://terminology.hl7.org/CodeSystem/observation-category",
-                                Code = "vital-signs"
-                            }
-                        }
-                };
-
-                vitalSign.Category = new List<CodeableConcept>()
-                    {
-                        codeConcept
-                    };
-
-                // Status
-                var statusCodeXPath = "n1:statusCode";
-                var statusCode = element
-                    .XPathSelectElement(statusCodeXPath, namespaceManager)?
-                    .Attribute("code")?
-                    .Value;
-
-                switch (statusCode)
-                {
-                    case "registered":
-                    case "received":
-                        vitalSign.Status = ObservationStatus.Registered;
-                        break;
-                    case "preliminary":
-                    case "draft":
-                        vitalSign.Status = ObservationStatus.Preliminary;
-                        break;
-                    case "final":
-                    case "completed":
-                        vitalSign.Status = ObservationStatus.Final;
-                        break;
-                    case "amended":
-                        vitalSign.Status = ObservationStatus.Amended;
-                        break;
-                    case "corrected":
-                        vitalSign.Status = ObservationStatus.Corrected;
-                        break;
-                    case "cancelled":
-                    case "abandoned":
-                        vitalSign.Status = ObservationStatus.Cancelled;
-                        break;
-                    case "entered-in-error":
-                    case "error":
-                        vitalSign.Status = ObservationStatus.EnteredInError;
-                        break;
-                    default:
-                        vitalSign.Status = ObservationStatus.Unknown;
-                        break;
-                }
-
-                // Code
-                var codeableConcept = element
-                    .FindCodeElementWithTranslation()?
-                    .ToCodeableConcept();
-
-                if (codeableConcept == null)
-                    throw new InvalidOperationException($"Could not determine which vital sign was recorded in: {element}");
-
-                vitalSign.Code = codeableConcept;
-
-                // Effective Date
-                var effectiveDateXPath = "n1:effectiveTime";
-                var elementEffectiveDate = element.XPathSelectElement(effectiveDateXPath, namespaceManager);
-
-                vitalSign.Effective = elementEffectiveDate?.ToDateTimeElement();
-                if (vitalSign.Effective == null)
-                    throw new InvalidOperationException($"Could not determine the vital sign's effective date in: {element}");
-
-                // Value Quantity
-                var valueQuantityXPath = "n1:value";
-                var valueQuantityElement = element.XPathSelectElement(valueQuantityXPath, namespaceManager);
-
-                if (valueQuantityElement == null)
-                    throw new InvalidOperationException($"Could not determine the vital sign's result in: {element}");
-
-                var value = valueQuantityElement.Attribute("value")?.Value;
-                if (string.IsNullOrWhiteSpace(value))
-                    throw new InvalidOperationException($"No vital sign value found in: {valueQuantityElement}");
-
-                if (!decimal.TryParse(value, out var quantityValue))
-                    throw new InvalidOperationException($"The vital sign result is not numeric in: {element}");
-
-                var unit = valueQuantityElement.Attribute("unit")?.Value;
-
-                // Unit can be blank, for eg: BMI. removed the throw here.
-                var vitalSignQuantity = new Quantity();
-                vitalSignQuantity.Value = quantityValue;
-
-                if (!string.IsNullOrWhiteSpace(unit))
-                {
-                    vitalSignQuantity.Unit = unit;
-                }
-
-                vitalSign.Value = vitalSignQuantity;
-
-                // Subject
-                vitalSign.Subject = new ResourceReference($"urn:uuid:{_patientId}");
-
-                // Commit Resource
-                bundle.Entry.Add(new Bundle.EntryComponent
-                {
-                    FullUrl = $"urn:uuid:{id}",
-                    Resource = vitalSign
-                });
-            }
+            observation
+                .Category
+                .First()
+                .Coding
+                .First()
+                .Code = "vital-signs";
         }
     }
 }
