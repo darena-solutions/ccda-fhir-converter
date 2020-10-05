@@ -100,7 +100,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var procedureXPath = "//n1:section/n1:code[@code='47519-4']/../n1:entry/n1:procedure";
             AddConversionToBundle(procedureXPath, () => new ProcedureConverter(patientConverter.PatientId));
 
-            var deviceXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.23']/../n1:entry/n1:procedure";
+            var deviceXPath = "//n1:section/n1:code[@code='46264-8']/../n1:entry/n1:procedure/n1:participant/n1:participantRole";
             AddConversionToBundle(deviceXPath, () => new DeviceConverter(patientConverter.PatientId));
 
             var goalXPath = "//n1:section/n1:code[@code='61146-7']/../n1:entry/n1:observation";
@@ -116,7 +116,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
             AddConversionToBundle(labOrderXPath, () => new LabOrderServiceRequestConverter(patientConverter.PatientId));
 
             var referralXPath = "//n1:section/n1:code[@code='42349-1']/..";
-            AddConversionToBundle(referralXPath, () => new ReferralCarePlanConverter(patientConverter.PatientId));
+            AddConversionToBundle(referralXPath, () => new TextSpecificCarePlanConverter(patientConverter.PatientId));
+
+            var assessmentXPath = "//n1:section/n1:code[@code='51848-0']/..";
+            AddConversionToBundle(assessmentXPath, () => new TextSpecificCarePlanConverter(patientConverter.PatientId));
 
             var resultXPath = "//n1:section/n1:code[@code='30954-2']/../n1:entry/n1:organizer/n1:component/n1:observation";
             AddConversionToBundle(resultXPath, () => new ResultObservationConverter(patientConverter.PatientId));
