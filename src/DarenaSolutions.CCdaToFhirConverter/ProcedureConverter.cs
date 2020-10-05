@@ -67,6 +67,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     FullUrl = $"urn:uuid:{id}",
                     Resource = procedure
                 });
+
+                var participantRoleEl = element
+                    .Element(Defaults.DefaultNs + "participant")?
+                    .Element(Defaults.DefaultNs + "participantRole");
+
+                if (participantRoleEl != null)
+                {
+                    var deviceConverter = new DeviceConverter(_patientId);
+                    deviceConverter.AddToBundle(
+                        bundle,
+                        new List<XElement> { participantRoleEl },
+                        namespaceManager,
+                        cacheManager);
+                }
             }
         }
     }

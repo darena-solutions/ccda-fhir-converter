@@ -52,10 +52,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     if (string.IsNullOrWhiteSpace(idValue))
                         continue;
 
+                    if (cacheManager.Contains(ResourceType.Device, null, idValue))
+                        continue;
+
                     udiCarrierComponent = new Device.UdiCarrierComponent
                     {
                         DeviceIdentifier = idValue
                     };
+
+                    cacheManager.Add(device, null, idValue);
                 }
 
                 var scopingEntityValue = element
