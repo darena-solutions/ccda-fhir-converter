@@ -82,6 +82,17 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case 14:
                     return "yyyyMMddHHmmss";
                 default:
+                    if (str.Length > 14 && str.Contains("-"))
+                    {
+                        switch (str.Length)
+                        {
+                            case 17:
+                                return "yyyyMMddHHmmK";
+                            case 19:
+                                return "yyyyMMddHHmmssK";
+                        }
+                    }
+
                     throw new InvalidOperationException($"The datetime string '{str}' has an invalid length");
             }
         }
