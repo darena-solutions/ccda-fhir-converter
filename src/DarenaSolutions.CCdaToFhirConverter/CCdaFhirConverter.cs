@@ -100,7 +100,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var procedureXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.7.1']/../n1:entry/n1:procedure";
             AddConversionToBundle(procedureXPath, () => new ProcedureConverter(patientConverter.PatientId));
 
-            var deviceXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.23']/../n1:entry/n1:procedure";
+            var deviceXPath = "//n1:section/n1:code[@code='46264-8']/../n1:entry/n1:procedure/n1:participant/n1:participantRole";
             AddConversionToBundle(deviceXPath, () => new DeviceConverter(patientConverter.PatientId));
 
             var goalXPath = "//n1:section/n1:code[@code='61146-7']/../n1:entry/n1:observation";

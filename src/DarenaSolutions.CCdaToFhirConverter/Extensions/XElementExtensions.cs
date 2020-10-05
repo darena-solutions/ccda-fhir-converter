@@ -554,13 +554,15 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             switch (type)
             {
                 case "cd":
-                    // Concept Descriptor -> Codeable concept
+                case "co":
+                    // Concept descriptor -> Codeable concept
+                    // Coded data -> Codeable concept
                     return self.ToCodeableConcept();
                 case "st":
-                    // Character String -> String
+                    // Character string -> String
                     return new FhirString(self.GetFirstTextNode());
                 case "pq":
-                    // Dimensioned Quantity -> Simple quantity
+                    // Dimensioned quantity -> Simple quantity
                     return self.ToSimpleQuantity();
                 default:
                     throw new InvalidOperationException(

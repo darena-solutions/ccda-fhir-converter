@@ -38,75 +38,56 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var device = new Device
                 {
                     Id = id,
-                    Meta = new Meta()
+                    Meta = new Meta(),
+                    Patient = new ResourceReference($"urn:uuid:{_patientId}")
                 };
 
                 device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
 
-                var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-                foreach (var identifierElement in identifierElements)
+                Device.UdiCarrierComponent udiCarrierComponent = null;
+                var identifierElement = element.Element(Defaults.DefaultNs + "id");
+                if (identifierElement != null)
                 {
-                    device.Identifier.Add(identifierElement.ToIdentifier());
-                }
+                    var idValue = identifierElement.Attribute("extension")?.Value;
+                    if (string.IsNullOrWhiteSpace(idValue))
+                        continue;
 
-                var playingDeviceCodeableConcept = element
-                    .FindCodeElementWithTranslation("n1:participant/n1:participantRole/n1:playingDevice", namespaceManager)?
-                    .ToCodeableConcept();
-
-                if (playingDeviceCodeableConcept == null)
-                    throw new InvalidOperationException($"No playing device code element was found in: {element}");
-
-                var playingDeviceCoding = playingDeviceCodeableConcept.Coding.First();
-                var udiCarrierHumanReadableStringXPath = "n1:participant/n1:participantRole/n1:id";
-                var udiCarrierHumanReadableStringElement = element.XPathSelectElement(udiCarrierHumanReadableStringXPath, namespaceManager);
-
-                if (udiCarrierHumanReadableStringElement != null)
-                {
-                    if (string.IsNullOrWhiteSpace(playingDeviceCoding.Code))
-                        throw new InvalidOperationException($"If a udi carrier is found, then a device identifier must exist: {element}");
-
-                    var udiCarrierHumanReadableString = udiCarrierHumanReadableStringElement
-                        .Attribute("extension")?
-                        .Value;
-
-                    Device.UdiCarrierComponent udiCarrierCcomponent = new Device.UdiCarrierComponent
+                    udiCarrierComponent = new Device.UdiCarrierComponent
                     {
-                        DeviceIdentifier = playingDeviceCoding.Code,
-                        CarrierHRF = !string.IsNullOrWhiteSpace(udiCarrierHumanReadableString) ? udiCarrierHumanReadableString : null
+                        DeviceIdentifier = idValue
                     };
-                    device.UdiCarrier.Add(udiCarrierCcomponent);
                 }
 
-                var statusCodeValue = element
-                    .Element(Defaults.DefaultNs + "statusCode")?
-                    .Attribute("code")?
+                var scopingEntityValue = element
+                    .Element(Defaults.DefaultNs + "scopingEntity")?
+                    .Element(Defaults.DefaultNs + "id")?
+                    .Attribute("root")?
                     .Value;
 
-                if (!string.IsNullOrWhiteSpace(statusCodeValue) && statusCodeValue.ToLowerInvariant().Equals("completed"))
+                if (!string.IsNullOrWhiteSpace(scopingEntityValue))
                 {
-                    device.Status = Device.FHIRDeviceStatus.Active;
-                }
-                else
-                {
-                    device.Status = Device.FHIRDeviceStatus.Unknown;
+                    udiCarrierComponent ??= new Device.UdiCarrierComponent();
+
+                    if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
+                    {
+                        throw new InvalidOperationException(
+                            $"A device scoping entity exists, however a device identifier could not be found in " +
+                            $"{element}");
+                    }
+
+                    udiCarrierComponent.Issuer = scopingEntityValue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(playingDeviceCoding.Display))
-                {
-                    device.DeviceName.Add(new Device.DeviceNameComponent { Name = playingDeviceCoding.Display, Type = DeviceNameType.UserFriendlyName });
-                }
+                if (udiCarrierComponent != null)
+                    device.UdiCarrier.Add(udiCarrierComponent);
 
-                var codeableConcept = element
-                    .FindCodeElementWithTranslation()?
+                device.Type = element
+                    .Element(Defaults.DefaultNs + "playingDevice")?
+                    .Element(Defaults.DefaultNs + "code")?
                     .ToCodeableConcept();
 
-                if (codeableConcept == null)
-                    throw new InvalidOperationException($"No code element was found in: {element}");
-
-                device.Type = codeableConcept;
-                device.Type.Text = codeableConcept.Coding.First().Display;
-                device.Patient = new ResourceReference($"urn:uuid:{_patientId}");
-                device.DistinctIdentifier = playingDeviceCoding.Code;
+                if (device.Type == null)
+                    throw new InvalidOperationException($"The device type could not be found in: {element}");
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {
