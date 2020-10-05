@@ -34,7 +34,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
         {
             foreach (var element in elements)
             {
-                var observationsXPath = "n1:entryRelationship/n1:observation[n1:templateId[@root='2.16.840.1.113883.10.20.22.4.7']]";
+                var authorElement = element.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
+                var observationsXPath = "n1:entryRelationship/n1:observation";
                 var observations = element.XPathSelectElements(observationsXPath, namespaceManager);
 
                 foreach (var observation in observations)
@@ -167,8 +168,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     });
 
                     // Provenance
-                    var provenance = new ProvenanceConverter("AllergyIntolerance", id.ToString());
-                    provenance.AddToBundle(bundle, observation.Elements(), namespaceManager, cacheManager);
+                    if (authorElement == null)
+                        continue;
+
+                    var provenance = new ProvenanceConverter(ResourceType.AllergyIntolerance, id.ToString());
+                    provenance.AddToBundle(
+                        bundle,
+                        new List<XElement> { authorElement },
+                        namespaceManager,
+                        cacheManager);
                 }
             }
         }

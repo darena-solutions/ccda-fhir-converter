@@ -14,17 +14,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// </summary>
     public class ProvenanceConverter : IResourceConverter
     {
-        private readonly string _targetResource;
+        private readonly ResourceType _targetResourceType;
         private readonly string _targetId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProvenanceConverter"/> class
         /// </summary>
-        /// <param name="targetResource">The target resource, in which the provenance is associated with</param>
+        /// <param name="targetResourceType">The target resource, in which the provenance is associated with</param>
         /// <param name="targetId">The target id, in which the provenance is associated with</param>
-        public ProvenanceConverter(string targetResource, string targetId)
+        public ProvenanceConverter(ResourceType targetResourceType, string targetId)
         {
-            _targetResource = targetResource;
+            _targetResourceType = targetResourceType;
             _targetId = targetId;
         }
 
@@ -37,7 +37,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         {
             var authorElement = elements.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
             if (authorElement == null)
-                throw new InvalidOperationException($"Could not find an author reference in {_targetResource}");
+                return;
 
             var id = Guid.NewGuid();
             var provenance = new Provenance
@@ -52,7 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
 
             // Target
-            provenance.Target.Add(new ResourceReference(_targetResource + "/" + _targetId));
+            provenance.Target.Add(new ResourceReference(_targetResourceType + "/" + _targetId));
 
             // Date Recorded
             var dateRecordedValue = authorElement
