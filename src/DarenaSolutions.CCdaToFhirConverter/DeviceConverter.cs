@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
-using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
@@ -44,23 +42,38 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
 
+                device.Type = element
+                    .Element(Defaults.DefaultNs + "playingDevice")?
+                    .Element(Defaults.DefaultNs + "code")?
+                    .ToCodeableConcept();
+
+                if (device.Type == null)
+                    throw new InvalidOperationException($"The device type could not be found in: {element}");
+
                 Device.UdiCarrierComponent udiCarrierComponent = null;
-                var identifierElement = element.Element(Defaults.DefaultNs + "id");
-                if (identifierElement != null)
+                var barcodeEl = element.Element(Defaults.DefaultNs + "id");
+                if (barcodeEl != null)
                 {
-                    var idValue = identifierElement.Attribute("extension")?.Value;
-                    if (string.IsNullOrWhiteSpace(idValue))
+                    var barcodeValue = barcodeEl.Attribute("extension")?.Value;
+                    if (string.IsNullOrWhiteSpace(barcodeValue))
                         continue;
 
-                    if (cacheManager.Contains(ResourceType.Device, null, idValue))
+                    if (cacheManager.Contains(ResourceType.Device, null, barcodeValue))
                         continue;
 
                     udiCarrierComponent = new Device.UdiCarrierComponent
                     {
-                        DeviceIdentifier = idValue
+                        CarrierHRF = barcodeValue
                     };
 
-                    cacheManager.Add(device, null, idValue);
+                    cacheManager.Add(device, null, barcodeValue);
+                }
+
+                var typeCoding = device.Type.Coding.First();
+                if (!string.IsNullOrWhiteSpace(typeCoding.Code))
+                {
+                    udiCarrierComponent ??= new Device.UdiCarrierComponent();
+                    udiCarrierComponent.DeviceIdentifier = typeCoding.Code;
                 }
 
                 var scopingEntityValue = element
@@ -72,27 +85,19 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (!string.IsNullOrWhiteSpace(scopingEntityValue))
                 {
                     udiCarrierComponent ??= new Device.UdiCarrierComponent();
-
-                    if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
-                    {
-                        throw new InvalidOperationException(
-                            $"A device scoping entity exists, however a device identifier could not be found in " +
-                            $"{element}");
-                    }
-
                     udiCarrierComponent.Issuer = scopingEntityValue;
                 }
 
                 if (udiCarrierComponent != null)
+                {
+                    if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
+                        throw new InvalidOperationException($"The device identifier could not be found in: {element}");
+
+                    if (string.IsNullOrWhiteSpace(udiCarrierComponent.CarrierHRF))
+                        throw new InvalidOperationException($"A device barcode value could not be found in: {element}");
+
                     device.UdiCarrier.Add(udiCarrierComponent);
-
-                device.Type = element
-                    .Element(Defaults.DefaultNs + "playingDevice")?
-                    .Element(Defaults.DefaultNs + "code")?
-                    .ToCodeableConcept();
-
-                if (device.Type == null)
-                    throw new InvalidOperationException($"The device type could not be found in: {element}");
+                }
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {
