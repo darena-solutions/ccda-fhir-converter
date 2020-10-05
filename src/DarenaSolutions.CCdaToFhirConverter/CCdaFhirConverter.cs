@@ -65,8 +65,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 throw new InvalidOperationException("A patient could not be found");
 
             var allergyIntoleranceXPath =
-                "//n1:component/n1:section/n1:templateId[@root='2.16.840.1.113883.10.20.22.2.6.1']/.." +
-                "/n1:entry/n1:act[n1:entryRelationship/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.7']]";
+                "//n1:component/n1:section/n1:code[@code='48765-2']/.." +
+                "/n1:entry/n1:act/n1:entryRelationship/n1:observation";
 
             AddConversionToBundle(allergyIntoleranceXPath, () => new AllergyIntoleranceConverter(patientConverter.PatientId));
 
