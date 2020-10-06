@@ -10,25 +10,29 @@ using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class ImmunizationConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into immunization FHIR resources
+    /// </summary>
+    public class ImmunizationConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmunizationConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public ImmunizationConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.2.1']/../n1:entry/n1:substanceAdministration";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -39,7 +43,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 Id = id,
                 Meta = new Meta(),
-                Patient = new ResourceReference($"urn:uuid:{_patientId}"),
+                Patient = new ResourceReference($"urn:uuid:{PatientId}"),
                 PrimarySource = false
             };
 
@@ -95,16 +99,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             if (representedOrganizationElement != null)
             {
-                var representedOrganizationConverter = new RepresentedOrganizationConverter();
+                var representedOrganizationConverter = new OrganizationConverter();
                 representedOrganizationConverter.AddToBundle(
                     bundle,
-                    new List<XElement> { representedOrganizationElement },
+                    representedOrganizationElement,
                     namespaceManager,
                     cacheManager);
 
                 immunization.Performer.Add(new Immunization.PerformerComponent
                 {
-                    Actor = new ResourceReference($"urn:uuid:{representedOrganizationConverter.OrganizationId}")
+                    Actor = new ResourceReference($"urn:uuid:{representedOrganizationConverter.Resource.Id}")
                 });
             }
 
@@ -114,7 +118,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = immunization
             });
 
-            Resource = immunization;
+            Resources.Add(immunization);
         }
     }
 }

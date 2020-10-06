@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
@@ -8,14 +9,30 @@ using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class PractitionerConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into practitioner FHIR resources
+    /// </summary>
+    public class PractitionerConverter : BaseConverter
     {
-        /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PractitionerConverter"/> class
+        /// </summary>
+        /// <param name="patientId">The id of the patient referenced in the CCDA</param>
+        public PractitionerConverter(string patientId)
+            : base(patientId)
+        {
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            throw new InvalidOperationException(
+                "This converter is not intended to be used as a standalone converter. Practitioner elements must " +
+                "be determined before using this converter. This converter itself cannot determine practitioner resources");
+        }
+
+        /// <inheritdoc />
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -36,7 +53,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var identifier = identifierElement.ToIdentifier(true);
                 if (cacheManager.TryGetResource(ResourceType.Practitioner, identifier.System, identifier.Value, out var resource))
                 {
-                    Resource = resource;
+                    Resources.Add(resource);
                     return;
                 }
 
@@ -91,7 +108,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = practitioner
             });
 
-            Resource = practitioner;
+            Resources.Add(practitioner);
         }
     }
 }

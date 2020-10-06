@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
@@ -10,25 +11,29 @@ using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class AllergyIntoleranceConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA to allergy intolerance FHIR resources
+    /// </summary>
+    public class AllergyIntoleranceConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="AllergyIntoleranceConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public AllergyIntoleranceConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:component/n1:section/n1:code[@code='48765-2']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -39,7 +44,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 Id = id,
                 Meta = new Meta(),
-                Patient = new ResourceReference($"urn:uuid:{_patientId}")
+                Patient = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
             allergyIntolerance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance"));
@@ -160,19 +165,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     Resource = allergyIntolerance
                 });
 
-                Resource = allergyIntolerance;
+                Resources.Add(allergyIntolerance);
 
                 // Provenance
                 var authorElement = element.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
                 if (authorElement == null)
                     return;
 
-                var provenance = new ProvenanceConverter(ResourceType.AllergyIntolerance, id.ToString());
-                provenance.AddToBundle(
+                var provenanceConverter = new ProvenanceConverter(PatientId);
+                provenanceConverter.AddToBundle(
                     bundle,
                     new List<XElement> { authorElement },
                     namespaceManager,
                     cacheManager);
+
+                var provenance = provenanceConverter.GetFirstResourceAsType<Provenance>();
+                provenance.Target.Add(new ResourceReference($"{ResourceType.AllergyIntolerance}/{id}"));
             }
         }
     }

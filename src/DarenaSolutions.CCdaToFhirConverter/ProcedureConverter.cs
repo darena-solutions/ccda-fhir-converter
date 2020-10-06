@@ -2,31 +2,36 @@
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class ProcedureConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into FHIR procedure resources
+    /// </summary>
+    public class ProcedureConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcedureConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public ProcedureConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='47519-4']/../n1:entry/n1:procedure";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -37,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 Id = id,
                 Meta = new Meta(),
-                Subject = new ResourceReference($"urn:uuid:{_patientId}"),
+                Subject = new ResourceReference($"urn:uuid:{PatientId}"),
                 Status = EventStatus.Completed
             };
 
@@ -69,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = procedure
             });
 
-            Resource = procedure;
+            Resources.Add(procedure);
 
             var participantRoleEl = element
                 .Element(Defaults.DefaultNs + "participant")?
@@ -77,10 +82,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             if (participantRoleEl != null)
             {
-                var deviceConverter = new DeviceConverter(_patientId);
+                var deviceConverter = new DeviceConverter(PatientId);
                 deviceConverter.AddToBundle(
                     bundle,
-                    new List<XElement> { participantRoleEl },
+                    participantRoleEl,
                     namespaceManager,
                     cacheManager);
             }

@@ -1,31 +1,37 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class GoalConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into goal FHIR resources
+    /// </summary>
+    public class GoalConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="GoalConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public GoalConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='61146-7']/../n1:entry/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -36,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 Id = id,
                 Meta = new Meta(),
-                Subject = new ResourceReference($"urn:uuid:{_patientId}"),
+                Subject = new ResourceReference($"urn:uuid:{PatientId}"),
                 LifecycleStatus = Goal.GoalLifecycleStatus.Active
             };
 
@@ -90,7 +96,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = goal
             });
 
-            Resource = goal;
+            Resources.Add(goal);
         }
     }
 }

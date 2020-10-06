@@ -1,20 +1,27 @@
 ﻿using System;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class RepresentedOrganizationConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts an element in the CCDA to an organization FHIR resource
+    /// </summary>
+    public class OrganizationConverter : BaseSingleResourceConverter
     {
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        protected override XElement GetPrimaryElement(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:representedOrganization";
+            return cCda.XPathSelectElement(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,

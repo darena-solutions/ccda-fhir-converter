@@ -32,103 +32,191 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <returns>The FHIR bundle representation</returns>
         public Bundle ConvertCCda(XDocument cCda)
         {
+            var cacheManager = new ConvertedCacheManager();
             var bundle = new Bundle
             {
                 Type = Bundle.BundleType.Collection,
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            var cacheManager = new ConvertedCacheManager();
+            var primaryOrg = ExecuteOrganizationConversion(cCda, bundle, cacheManager);
+            var primaryPatient = ExecutePatientConversion(cCda, bundle, cacheManager, primaryOrg?.Id);
 
-            T AddConversionToBundle<T>(string xPath, Func<T> factory)
-                where T : IResourceConverter
-            {
-                var elements = cCda.XPathSelectElements(xPath, _namespaceManager);
-                var converter = factory();
-                converter.AddToBundle(bundle, elements, _namespaceManager, cacheManager);
-
-                return converter;
-            }
-
-            var representedOrganizationConverter = AddConversionToBundle(
-                "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:representedOrganization",
-                () => new RepresentedOrganizationConverter());
-
-            if (string.IsNullOrWhiteSpace(representedOrganizationConverter.OrganizationId))
-                throw new InvalidOperationException("A represented organization could not be found");
-
-            var patientConverter = AddConversionToBundle(
-                "n1:ClinicalDocument/n1:recordTarget/n1:patientRole",
-                () => new PatientConverter(representedOrganizationConverter.OrganizationId));
-
-            if (string.IsNullOrWhiteSpace(patientConverter.PatientId))
+            if (primaryPatient == null)
                 throw new InvalidOperationException("A patient could not be found");
 
-            var allergyIntoleranceXPath =
-                "//n1:component/n1:section/n1:code[@code='48765-2']/.." +
-                "/n1:entry/n1:act/n1:entryRelationship/n1:observation";
+            ////ExecuteAllergyIntoleranceConversion(cCda, bundle, cacheManager, primaryPatient.Id);
+            ////ExecuteMedicationConversion(cCda, bundle, cacheManager, primaryPatient.Id);
+            ////ExecuteEncounterDiagnosisConversion(cCda, bundle, cacheManager, primaryPatient.Id);
 
-            AddConversionToBundle(allergyIntoleranceXPath, () => new AllergyIntoleranceConverter(patientConverter.PatientId));
+            ////var healthConcernXPath = "//n1:section/n1:code[@code='75310-3']/../n1:entry/n1:act";
+            ////AddConversionToBundle(healthConcernXPath, () => new BaseConditionConverter(patientConverter.PatientId, ConditionCategory.HealthConcern));
 
-            var medicationXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.1.1']/../n1:entry";
-            AddConversionToBundle(medicationXPath, () => new MedicationConverter(patientConverter.PatientId));
+            ////var healthConcernObservationXPath = "//n1:section/n1:code[@code='75310-3']/../n1:entry/n1:observation";
+            ////AddConversionToBundle(healthConcernObservationXPath, () => new StatusObservationConverter(patientConverter.PatientId));
 
-            var encounterDiagnosisXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.22.1']/.." +
-                "/n1:entry/n1:encounter/n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation";
+            ////var problemXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.5.1']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
+            ////AddConversionToBundle(problemXPath, () => new BaseConditionConverter(patientConverter.PatientId, ConditionCategory.ProblemList));
 
-            AddConversionToBundle(encounterDiagnosisXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.EncounterDiagnosis));
-
-            var healthConcernXPath = "//n1:section/n1:code[@code='75310-3']/../n1:entry/n1:act";
-            AddConversionToBundle(healthConcernXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.HealthConcern));
-
-            var healthConcernObservationXPath = "//n1:section/n1:code[@code='75310-3']/../n1:entry/n1:observation";
-            AddConversionToBundle(healthConcernObservationXPath, () => new StatusObservationConverter(patientConverter.PatientId));
-
-            var problemXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.5.1']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
-            AddConversionToBundle(problemXPath, () => new ConditionConverter(patientConverter.PatientId, ConditionCategory.ProblemList));
-
-            var immunizationXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.2.1']/../n1:entry/n1:substanceAdministration";
-            AddConversionToBundle(immunizationXPath, () => new ImmunizationConverter(patientConverter.PatientId));
+            ////var immunizationXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.2.1']/../n1:entry/n1:substanceAdministration";
+            ////AddConversionToBundle(immunizationXPath, () => new ImmunizationConverter(patientConverter.PatientId));
 
             // Vital Signs
-            var vitalSignsXPath = "//n1:section/n1:code[@code='8716-3']/../n1:entry/n1:organizer/n1:component/n1:observation";
-            AddConversionToBundle(vitalSignsXPath, () => new VitalSignObservationConverter(patientConverter.PatientId));
+            ////var vitalSignsXPath = "//n1:section/n1:code[@code='8716-3']/../n1:entry/n1:organizer/n1:component/n1:observation";
+            ////AddConversionToBundle(vitalSignsXPath, () => new VitalSignObservationConverter(patientConverter.PatientId));
 
-            var procedureXPath = "//n1:section/n1:code[@code='47519-4']/../n1:entry/n1:procedure";
-            AddConversionToBundle(procedureXPath, () => new ProcedureConverter(patientConverter.PatientId));
+            ////var procedureXPath = "//n1:section/n1:code[@code='47519-4']/../n1:entry/n1:procedure";
+            ////AddConversionToBundle(procedureXPath, () => new ProcedureConverter(patientConverter.PatientId));
 
             var deviceXPath = "//n1:section/n1:code[@code='46264-8']/../n1:entry/n1:procedure/n1:participant/n1:participantRole";
             AddConversionToBundle(deviceXPath, () => new DeviceConverter(patientConverter.PatientId));
 
-            var goalXPath = "//n1:section/n1:code[@code='61146-7']/../n1:entry/n1:observation";
-            AddConversionToBundle(goalXPath, () => new GoalConverter(patientConverter.PatientId));
+            ////var goalXPath = "//n1:section/n1:code[@code='61146-7']/../n1:entry/n1:observation";
+            ////AddConversionToBundle(goalXPath, () => new GoalConverter(patientConverter.PatientId));
 
             // Social History - Smoking Status
-            var smokingStatusXPath = "//n1:section/n1:code[@code='29762-2']/../n1:entry/n1:observation/n1:code[@code='72166-2']/..";
-            AddConversionToBundle(smokingStatusXPath, () => new SmokingStatusObservationConverter(patientConverter.PatientId));
+            ////var smokingStatusXPath = "//n1:section/n1:code[@code='29762-2']/../n1:entry/n1:observation/n1:code[@code='72166-2']/..";
+            ////AddConversionToBundle(smokingStatusXPath, () => new SmokingStatusObservationConverter(patientConverter.PatientId));
 
-            var labOrderXPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.10']/../n1:entry/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.44']/..";
-            AddConversionToBundle(labOrderXPath, () => new LabOrderServiceRequestConverter(patientConverter.PatientId));
+            ////var referralXPath = "//n1:section/n1:code[@code='42349-1']/..";
+            ////AddConversionToBundle(referralXPath, () => new TextSpecificCarePlanConverter(patientConverter.PatientId));
 
-            var referralXPath = "//n1:section/n1:code[@code='42349-1']/..";
-            AddConversionToBundle(referralXPath, () => new TextSpecificCarePlanConverter(patientConverter.PatientId));
+            ////var assessmentXPath = "//n1:section/n1:code[@code='51848-0']/..";
+            ////AddConversionToBundle(assessmentXPath, () => new TextSpecificCarePlanConverter(patientConverter.PatientId));
 
-            var assessmentXPath = "//n1:section/n1:code[@code='51848-0']/..";
-            AddConversionToBundle(assessmentXPath, () => new TextSpecificCarePlanConverter(patientConverter.PatientId));
+            ////var resultXPath = "//n1:section/n1:code[@code='30954-2']/../n1:entry/n1:organizer/n1:component/n1:observation";
+            ////AddConversionToBundle(resultXPath, () => new ResultObservationConverter(patientConverter.PatientId));
 
-            var resultXPath = "//n1:section/n1:code[@code='30954-2']/../n1:entry/n1:organizer/n1:component/n1:observation";
-            AddConversionToBundle(resultXPath, () => new ResultObservationConverter(patientConverter.PatientId));
+            ////var consultationNotesXPath = "//n1:section/n1:code[@code='11488-4']/../n1:entry/n1:act";
+            ////AddConversionToBundle(consultationNotesXPath, () => new ClinicalImpressionConverter(patientConverter.PatientId));
 
-            var consultationNotesXPath = "//n1:section/n1:code[@code='11488-4']/../n1:entry/n1:act";
-            AddConversionToBundle(consultationNotesXPath, () => new ClinicalImpressionConverter(patientConverter.PatientId));
+            ////var functionalStatusXPath = "//n1:section/n1:code[@code='47420-5']/../n1:entry/n1:observation";
+            ////AddConversionToBundle(functionalStatusXPath, () => new StatusObservationConverter(patientConverter.PatientId));
 
-            var functionalStatusXPath = "//n1:section/n1:code[@code='47420-5']/../n1:entry/n1:observation";
-            AddConversionToBundle(functionalStatusXPath, () => new StatusObservationConverter(patientConverter.PatientId));
-
-            var mentalStatusXPath = "//n1:section/n1:code[@code='10190-7']/../n1:entry/n1:observation";
-            AddConversionToBundle(mentalStatusXPath, () => new StatusObservationConverter(patientConverter.PatientId));
+            ////var mentalStatusXPath = "//n1:section/n1:code[@code='10190-7']/../n1:entry/n1:observation";
+            ////AddConversionToBundle(mentalStatusXPath, () => new StatusObservationConverter(patientConverter.PatientId));
 
             return bundle;
+        }
+
+        protected Organization ExecuteOrganizationConversion(XDocument cCda, Bundle bundle, ConvertedCacheManager cacheManager)
+        {
+            var xPath = "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:representedOrganization";
+            var converter = ExecuteConversionSingle(
+                cCda,
+                bundle,
+                cacheManager,
+                xPath,
+                () => new OrganizationConverter());
+
+            return (Organization)converter.Resource;
+        }
+
+        protected Patient ExecutePatientConversion(
+            XDocument cCda,
+            Bundle bundle,
+            ConvertedCacheManager cacheManager,
+            string managingOrganizationId)
+        {
+            var xPath = "n1:ClinicalDocument/n1:recordTarget/n1:patientRole";
+            var converter = ExecuteConversionSingle(
+                cCda,
+                bundle,
+                cacheManager,
+                xPath,
+                () => new PatientConverter(managingOrganizationId));
+
+            return (Patient)converter.Resource;
+        }
+
+        protected void ExecuteAllergyIntoleranceConversion(
+            XDocument cCda,
+            Bundle bundle,
+            ConvertedCacheManager cacheManager,
+            string patientId)
+        {
+            var xPath = "//n1:component/n1:section/n1:code[@code='48765-2']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
+            ExecuteConversionMulti(
+                cCda,
+                bundle,
+                cacheManager,
+                xPath,
+                () => new AllergyIntoleranceConverter(patientId));
+        }
+
+        protected void ExecuteMedicationConversion(
+            XDocument cCda,
+            Bundle bundle,
+            ConvertedCacheManager cacheManager,
+            string patientId)
+        {
+            var xPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.1.1']/../n1:entry";
+            ExecuteConversionMulti(
+                cCda,
+                bundle,
+                cacheManager,
+                xPath,
+                () => new MedicationConverter(patientId));
+        }
+
+        protected void ExecuteEncounterDiagnosisConversion(
+            XDocument cCda,
+            Bundle bundle,
+            ConvertedCacheManager cacheManager,
+            string patientId)
+        {
+            var xPath =
+                "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.22.1']/.." +
+                "/n1:entry/n1:encounter/n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation";
+
+            ExecuteConversionMulti(
+                cCda,
+                bundle,
+                cacheManager,
+                xPath,
+                () => new BaseConditionConverter(patientId, ConditionCategory.EncounterDiagnosis));
+        }
+
+        private T ExecuteConversionSingle<T>(
+            XDocument cCda,
+            Bundle bundle,
+            ConvertedCacheManager cacheManager,
+            string xPath,
+            Func<T> factory)
+            where T : IResourceConverter
+        {
+            var element = cCda.XPathSelectElement(xPath, _namespaceManager);
+            if (element == null)
+                return default;
+
+            var converter = factory();
+            converter.AddToBundle(
+                bundle,
+                element,
+                _namespaceManager,
+                cacheManager);
+
+            return converter;
+        }
+
+        private void ExecuteConversionMulti<T>(
+            XDocument cCda,
+            Bundle bundle,
+            ConvertedCacheManager cacheManager,
+            string xPath,
+            Func<T> factory)
+            where T : IResourceConverter
+        {
+            var elements = cCda.XPathSelectElements(xPath, _namespaceManager);
+            foreach (var element in elements)
+            {
+                var converter = factory();
+                converter.AddToBundle(
+                    bundle,
+                    element,
+                    _namespaceManager,
+                    cacheManager);
+            }
         }
     }
 }

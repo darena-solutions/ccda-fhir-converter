@@ -1,0 +1,69 @@
+﻿using System.Xml;
+using System.Xml.Linq;
+using Hl7.Fhir.Model;
+
+namespace DarenaSolutions.CCdaToFhirConverter
+{
+    /// <summary>
+    /// The base class that all single resource converters must derive from
+    /// </summary>
+    public abstract class BaseSingleResourceConverter : ISingleResourceConverter
+    {
+        /// <inheritdoc />
+        public Resource Resource { get; protected set; }
+
+        /// <inheritdoc />
+        public void AddToBundle(
+            Bundle bundle,
+            XDocument cCda,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager)
+        {
+            Resource = null;
+
+            var element = GetPrimaryElement(cCda, namespaceManager);
+            PerformElementConversion(
+                bundle,
+                element,
+                namespaceManager,
+                cacheManager);
+        }
+
+        /// <inheritdoc />
+        public void AddToBundle(
+            Bundle bundle,
+            XElement element,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager)
+        {
+            Resource = null;
+            PerformElementConversion(
+                bundle,
+                element,
+                namespaceManager,
+                cacheManager);
+        }
+
+        /// <summary>
+        /// Gets the primary element that will need to be converted to a FHIR resource
+        /// </summary>
+        /// <param name="cCda">The root CCDA document element</param>
+        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the root CCDA document</param>
+        /// <returns>The primary element that will be converted to a FHIR resource</returns>
+        protected abstract XElement GetPrimaryElement(XDocument cCda, XmlNamespaceManager namespaceManager);
+
+        /// <summary>
+        /// Performs the actual conversion of an element into the relevant FHIR resource
+        /// </summary>
+        /// <param name="bundle">The bundle to add the converted resource to as an entry</param>
+        /// <param name="element">The element to convert</param>
+        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the element</param>
+        /// <param name="cacheManager">A cache manager that can be used to determine if a particular resource has already
+        /// been converted and added to the bundle. It is up to each implementation to add entries to this cache.</param>
+        protected abstract void PerformElementConversion(
+            Bundle bundle,
+            XElement element,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager);
+    }
+}

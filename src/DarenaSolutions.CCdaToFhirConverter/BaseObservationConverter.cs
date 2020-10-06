@@ -11,27 +11,19 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// <summary>
     /// A base converter that contains the common mapping between all observation type resources
     /// </summary>
-    public class BaseObservationConverter : IResourceConverter
+    public abstract class BaseObservationConverter : BaseConverter
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseObservationConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         protected BaseObservationConverter(string patientId)
+            : base(patientId)
         {
-            PatientId = patientId;
         }
 
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
-
-        /// <summary>
-        /// Gets the id of the patient referenced in the CCDA
-        /// </summary>
-        protected string PatientId { get; }
-
-        /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -90,7 +82,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = observation
             });
 
-            Resource = observation;
+            Resources.Add(observation);
         }
     }
 }

@@ -9,25 +9,29 @@ using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class MedicationConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into medication FHIR resources
+    /// </summary>
+    public class MedicationConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MedicationConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public MedicationConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.1.1']/../n1:entry";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -37,7 +41,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (substanceAdministrationElement == null)
                 return;
 
-            var medicationStatementConverter = new MedicationStatementConverter(_patientId);
+            var medicationStatementConverter = new MedicationStatementConverter(PatientId);
             medicationStatementConverter.AddToBundle(
                 bundle,
                 new List<XElement> { substanceAdministrationElement },
@@ -72,8 +76,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     Resource = medication
                 });
 
-                Resource = medication;
-                medicationStatementConverter.MedicationStatement.Medication = new ResourceReference($"urn:uuid:{id}");
+                Resources.Add(medication);
+                medicationStatementConverter.GetFirstResourceAsType<MedicationStatement>().Medication = new ResourceReference($"urn:uuid:{id}");
 
                 var entryRelationshipElements = substanceAdministrationElement.Elements(Defaults.DefaultNs + "entryRelationship");
                 foreach (var entryRelationshipElement in entryRelationshipElements)
@@ -81,12 +85,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     var supplyElement = entryRelationshipElement.Element(Defaults.DefaultNs + "supply");
                     if (supplyElement != null)
                     {
-                        var medicationRequestConverter = new MedicationRequestConverter(_patientId, id);
+                        var medicationRequestConverter = new MedicationRequestConverter(PatientId);
                         medicationRequestConverter.AddToBundle(
                             bundle,
                             new List<XElement> { supplyElement },
                             namespaceManager,
                             cacheManager);
+
+                        medicationRequestConverter.GetFirstResourceAsType<MedicationRequest>().Medication = new ResourceReference($"urn:uuid:{id}");
                     }
                 }
             }
@@ -95,10 +101,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var representedOrganizationElement = substanceAdministrationElement.XPathSelectElement(representedOrganizationXPath, namespaceManager);
             if (representedOrganizationElement != null)
             {
-                var representedOrganizationConverter = new RepresentedOrganizationConverter();
+                var representedOrganizationConverter = new OrganizationConverter();
                 representedOrganizationConverter.AddToBundle(
                     bundle,
-                    new List<XElement> { representedOrganizationElement },
+                    representedOrganizationElement,
                     namespaceManager,
                     cacheManager);
             }

@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -20,15 +22,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public override void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='8716-3']/../n1:entry/n1:organizer/n1:component/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
+
+        /// <inheritdoc />
+        protected override void PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            base.AddToBundle(bundle, element, namespaceManager, cacheManager);
+            base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
 
-            var observation = (Observation)Resource;
+            var observation = (Observation)Resources[^1];
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
 
