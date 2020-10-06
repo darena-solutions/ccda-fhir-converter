@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
@@ -12,22 +11,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// <inheritdoc />
     public class PractitionerConverter : IResourceConverter
     {
-        /// <summary>
-        /// Gets the id of the practitioner FHIR resource that was generated
-        /// </summary>
-        public string PractitionerId { get; private set; }
+        /// <inheritdoc />
+        public Resource Resource { get; private set; }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var practitioner = new Practitioner
             {
@@ -43,7 +36,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var identifier = identifierElement.ToIdentifier(true);
                 if (cacheManager.TryGetResource(ResourceType.Practitioner, identifier.System, identifier.Value, out var resource))
                 {
-                    PractitionerId = resource.Id;
+                    Resource = resource;
                     return;
                 }
 
@@ -98,7 +91,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = practitioner
             });
 
-            PractitionerId = id;
+            Resource = practitioner;
         }
     }
 }

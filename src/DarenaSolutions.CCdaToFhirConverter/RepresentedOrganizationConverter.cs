@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -12,22 +10,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// <inheritdoc />
     public class RepresentedOrganizationConverter : IResourceConverter
     {
-        /// <summary>
-        /// Gets the id of the FHIR organization resource that was generated
-        /// </summary>
-        public string OrganizationId { get; private set; }
+        /// <inheritdoc />
+        public Resource Resource { get; private set; }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var organization = new Organization
             {
@@ -48,7 +40,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var identifier = identifierElement.ToIdentifier();
                 if (cacheManager.TryGetResource(ResourceType.Organization, identifier.System, identifier.Value, out var resource))
                 {
-                    OrganizationId = resource.Id;
+                    Resource = resource;
                     return;
                 }
 
@@ -78,7 +70,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = organization
             });
 
-            OrganizationId = id;
+            Resource = organization;
         }
     }
 }

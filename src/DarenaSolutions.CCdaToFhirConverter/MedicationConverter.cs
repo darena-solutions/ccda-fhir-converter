@@ -24,82 +24,83 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public Resource Resource { get; private set; }
+
+        /// <inheritdoc />
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            foreach (var element in elements)
+            var substanceAdministrationElement = element.Element(Defaults.DefaultNs + "substanceAdministration");
+            if (substanceAdministrationElement == null)
+                return;
+
+            var medicationStatementConverter = new MedicationStatementConverter(_patientId);
+            medicationStatementConverter.AddToBundle(
+                bundle,
+                new List<XElement> { substanceAdministrationElement },
+                namespaceManager,
+                cacheManager);
+
+            var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
+            var manufacturedMaterialElement = substanceAdministrationElement.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
+
+            if (manufacturedMaterialElement != null)
             {
-                var substanceAdministrationElement = element.Element(Defaults.DefaultNs + "substanceAdministration");
-                if (substanceAdministrationElement == null)
-                    continue;
-
-                var medicationStatementConverter = new MedicationStatementConverter(_patientId);
-                medicationStatementConverter.AddToBundle(
-                    bundle,
-                    new List<XElement> { substanceAdministrationElement },
-                    namespaceManager,
-                    cacheManager);
-
-                var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
-                var manufacturedMaterialElement = substanceAdministrationElement.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
-
-                if (manufacturedMaterialElement != null)
+                var id = Guid.NewGuid().ToString();
+                var medication = new Medication
                 {
-                    var id = Guid.NewGuid().ToString();
-                    var medication = new Medication
+                    Id = id,
+                    Meta = new Meta()
+                };
+
+                medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
+
+                var codeableConcept = manufacturedMaterialElement
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept();
+
+                if (codeableConcept == null)
+                    throw new InvalidOperationException($"Could not find a medication code in: {manufacturedMaterialElement}");
+
+                medication.Code = codeableConcept;
+                bundle.Entry.Add(new Bundle.EntryComponent
+                {
+                    FullUrl = $"urn:uuid:{id}",
+                    Resource = medication
+                });
+
+                Resource = medication;
+                medicationStatementConverter.MedicationStatement.Medication = new ResourceReference($"urn:uuid:{id}");
+
+                var entryRelationshipElements = substanceAdministrationElement.Elements(Defaults.DefaultNs + "entryRelationship");
+                foreach (var entryRelationshipElement in entryRelationshipElements)
+                {
+                    var supplyElement = entryRelationshipElement.Element(Defaults.DefaultNs + "supply");
+                    if (supplyElement != null)
                     {
-                        Id = id,
-                        Meta = new Meta()
-                    };
-
-                    medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
-
-                    var codeableConcept = manufacturedMaterialElement
-                        .FindCodeElementWithTranslation()?
-                        .ToCodeableConcept();
-
-                    if (codeableConcept == null)
-                        throw new InvalidOperationException($"Could not find a medication code in: {manufacturedMaterialElement}");
-
-                    medication.Code = codeableConcept;
-                    bundle.Entry.Add(new Bundle.EntryComponent
-                    {
-                        FullUrl = $"urn:uuid:{id}",
-                        Resource = medication
-                    });
-
-                    medicationStatementConverter.MedicationStatement.Medication = new ResourceReference($"urn:uuid:{id}");
-
-                    var entryRelationshipElements = substanceAdministrationElement.Elements(Defaults.DefaultNs + "entryRelationship");
-                    foreach (var entryRelationshipElement in entryRelationshipElements)
-                    {
-                        var supplyElement = entryRelationshipElement.Element(Defaults.DefaultNs + "supply");
-                        if (supplyElement != null)
-                        {
-                            var medicationRequestConverter = new MedicationRequestConverter(_patientId, id);
-                            medicationRequestConverter.AddToBundle(
-                                bundle,
-                                new List<XElement> { supplyElement },
-                                namespaceManager,
-                                cacheManager);
-                        }
+                        var medicationRequestConverter = new MedicationRequestConverter(_patientId, id);
+                        medicationRequestConverter.AddToBundle(
+                            bundle,
+                            new List<XElement> { supplyElement },
+                            namespaceManager,
+                            cacheManager);
                     }
                 }
+            }
 
-                var representedOrganizationXPath = "n1:informant/n1:assignedEntity/n1:representedOrganization";
-                var representedOrganizationElement = substanceAdministrationElement.XPathSelectElement(representedOrganizationXPath, namespaceManager);
-                if (representedOrganizationElement != null)
-                {
-                    var representedOrganizationConverter = new RepresentedOrganizationConverter();
-                    representedOrganizationConverter.AddToBundle(
-                        bundle,
-                        new List<XElement> { representedOrganizationElement },
-                        namespaceManager,
-                        cacheManager);
-                }
+            var representedOrganizationXPath = "n1:informant/n1:assignedEntity/n1:representedOrganization";
+            var representedOrganizationElement = substanceAdministrationElement.XPathSelectElement(representedOrganizationXPath, namespaceManager);
+            if (representedOrganizationElement != null)
+            {
+                var representedOrganizationConverter = new RepresentedOrganizationConverter();
+                representedOrganizationConverter.AddToBundle(
+                    bundle,
+                    new List<XElement> { representedOrganizationElement },
+                    namespaceManager,
+                    cacheManager);
             }
         }
     }

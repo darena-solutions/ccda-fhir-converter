@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -28,16 +27,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public Resource Resource { get; private set; }
+
+        /// <inheritdoc />
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var medicationRequest = new MedicationRequest
             {
@@ -102,6 +100,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 FullUrl = $"urn:uuid:{id}",
                 Resource = medicationRequest
             });
+
+            Resource = medicationRequest;
         }
     }
 }

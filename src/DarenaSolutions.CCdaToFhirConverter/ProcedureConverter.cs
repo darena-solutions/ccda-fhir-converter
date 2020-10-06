@@ -23,64 +23,66 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public Resource Resource { get; private set; }
+
+        /// <inheritdoc />
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            foreach (var element in elements)
+            var id = Guid.NewGuid().ToString();
+            var procedure = new Procedure
             {
-                var id = Guid.NewGuid().ToString();
-                var procedure = new Procedure
-                {
-                    Id = id,
-                    Meta = new Meta(),
-                    Subject = new ResourceReference($"urn:uuid:{_patientId}"),
-                    Status = EventStatus.Completed
-                };
+                Id = id,
+                Meta = new Meta(),
+                Subject = new ResourceReference($"urn:uuid:{_patientId}"),
+                Status = EventStatus.Completed
+            };
 
-                procedure.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"));
+            procedure.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"));
 
-                var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-                foreach (var identifierElement in identifierElements)
-                {
-                    procedure.Identifier.Add(identifierElement.ToIdentifier());
-                }
+            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
+            foreach (var identifierElement in identifierElements)
+            {
+                procedure.Identifier.Add(identifierElement.ToIdentifier());
+            }
 
-                procedure.Code = element
-                    .FindCodeElementWithTranslation()?
-                    .ToCodeableConcept();
+            procedure.Code = element
+                .FindCodeElementWithTranslation()?
+                .ToCodeableConcept();
 
-                if (procedure.Code == null)
-                    throw new InvalidOperationException($"No code element was found in: {element}");
+            if (procedure.Code == null)
+                throw new InvalidOperationException($"No code element was found in: {element}");
 
-                procedure.Performed = element
-                    .Element(Defaults.DefaultNs + "effectiveTime")?
-                    .ToDateTimeElement();
+            procedure.Performed = element
+                .Element(Defaults.DefaultNs + "effectiveTime")?
+                .ToDateTimeElement();
 
-                if (procedure.Performed == null)
-                    throw new InvalidOperationException($"A procedure occurrence date time could not be found in: {element}");
+            if (procedure.Performed == null)
+                throw new InvalidOperationException($"A procedure occurrence date time could not be found in: {element}");
 
-                bundle.Entry.Add(new Bundle.EntryComponent
-                {
-                    FullUrl = $"urn:uuid:{id}",
-                    Resource = procedure
-                });
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{id}",
+                Resource = procedure
+            });
 
-                var participantRoleEl = element
-                    .Element(Defaults.DefaultNs + "participant")?
-                    .Element(Defaults.DefaultNs + "participantRole");
+            Resource = procedure;
 
-                if (participantRoleEl != null)
-                {
-                    var deviceConverter = new DeviceConverter(_patientId);
-                    deviceConverter.AddToBundle(
-                        bundle,
-                        new List<XElement> { participantRoleEl },
-                        namespaceManager,
-                        cacheManager);
-                }
+            var participantRoleEl = element
+                .Element(Defaults.DefaultNs + "participant")?
+                .Element(Defaults.DefaultNs + "participantRole");
+
+            if (participantRoleEl != null)
+            {
+                var deviceConverter = new DeviceConverter(_patientId);
+                deviceConverter.AddToBundle(
+                    bundle,
+                    new List<XElement> { participantRoleEl },
+                    namespaceManager,
+                    cacheManager);
             }
         }
     }

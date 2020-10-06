@@ -25,22 +25,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
             _organizationId = organizationId;
         }
 
-        /// <summary>
-        /// Gets the id of the FHIR patient resource that was generated
-        /// </summary>
-        public string PatientId { get; private set; }
+        /// <inheritdoc />
+        public Resource Resource { get; private set; }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var patient = new Patient
             {
@@ -235,7 +229,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = patient
             });
 
-            PatientId = id;
+            Resource = patient;
         }
 
         private Extension GetRaceOrEthnicGroupExtension(List<XElement> defaultCodes, List<XElement> stdcCodes, bool isRace)

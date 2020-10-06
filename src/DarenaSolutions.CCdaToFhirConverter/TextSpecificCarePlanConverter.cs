@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -23,47 +22,49 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public Resource Resource { get; private set; }
+
+        /// <inheritdoc />
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            foreach (var element in elements)
+            var id = Guid.NewGuid().ToString();
+            var referral = new CarePlan
             {
-                var id = Guid.NewGuid().ToString();
-                var referral = new CarePlan
-                {
-                    Id = id,
-                    Status = RequestStatus.Active,
-                    Intent = CarePlan.CarePlanIntent.Plan,
-                    Subject = new ResourceReference($"urn:uuid:{_patientId}")
-                };
+                Id = id,
+                Status = RequestStatus.Active,
+                Intent = CarePlan.CarePlanIntent.Plan,
+                Subject = new ResourceReference($"urn:uuid:{_patientId}")
+            };
 
-                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
-                if (string.IsNullOrWhiteSpace(textEl))
-                    throw new InvalidOperationException($"Could not find any text for the referral in: {element}");
+            var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
+            if (string.IsNullOrWhiteSpace(textEl))
+                throw new InvalidOperationException($"Could not find any text for the referral in: {element}");
 
-                referral.Text = new Narrative
-                {
-                    Div = textEl,
-                    Status = Narrative.NarrativeStatus.Generated
-                };
+            referral.Text = new Narrative
+            {
+                Div = textEl,
+                Status = Narrative.NarrativeStatus.Generated
+            };
 
-                var codeableConcept = element
-                    .FindCodeElementWithTranslation()?
-                    .ToCodeableConcept();
+            var codeableConcept = element
+                .FindCodeElementWithTranslation()?
+                .ToCodeableConcept();
 
-                if (codeableConcept != null)
-                    referral.Category.Add(codeableConcept);
+            if (codeableConcept != null)
+                referral.Category.Add(codeableConcept);
 
-                // Commit Resource
-                bundle.Entry.Add(new Bundle.EntryComponent
-                {
-                    FullUrl = $"urn:uuid:{id}",
-                    Resource = referral
-                });
-            }
+            // Commit Resource
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{id}",
+                Resource = referral
+            });
+
+            Resource = referral;
         }
     }
 }

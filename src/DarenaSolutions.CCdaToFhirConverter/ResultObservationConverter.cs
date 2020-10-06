@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 using Hl7.Fhir.Model;
 
@@ -19,8 +20,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void CustomizeMapping(XElement element, Observation observation)
+        public override void AddToBundle(
+            Bundle bundle,
+            XElement element,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager)
         {
+            base.AddToBundle(bundle, element, namespaceManager, cacheManager);
+
+            var observation = (Observation)Resource;
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"));
 

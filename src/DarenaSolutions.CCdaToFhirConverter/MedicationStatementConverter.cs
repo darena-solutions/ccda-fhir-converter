@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -24,22 +23,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
             _patientId = patientId;
         }
 
-        /// <summary>
-        /// Gets the medication statement FHIR resource that was generated
-        /// </summary>
-        public MedicationStatement MedicationStatement { get; private set; }
+        /// <inheritdoc />
+        public Resource Resource { get; private set; }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var medicationStatement = new MedicationStatement
             {
@@ -139,7 +132,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = medicationStatement
             });
 
-            MedicationStatement = medicationStatement;
+            Resource = medicationStatement;
         }
     }
 }

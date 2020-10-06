@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -23,42 +22,44 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public Resource Resource { get; private set; }
+
+        /// <inheritdoc />
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            foreach (var element in elements)
+            var id = Guid.NewGuid().ToString();
+            var clinicalImpression = new ClinicalImpression
             {
-                var id = Guid.NewGuid().ToString();
-                var clinicalImpression = new ClinicalImpression
-                {
-                    Id = id,
-                    Status = ClinicalImpression.ClinicalImpressionStatus.Completed,
-                    Subject = new ResourceReference($"urn:uuid:{_patientId}")
-                };
+                Id = id,
+                Status = ClinicalImpression.ClinicalImpressionStatus.Completed,
+                Subject = new ResourceReference($"urn:uuid:{_patientId}")
+            };
 
-                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
-                if (string.IsNullOrWhiteSpace(textEl))
-                    throw new InvalidOperationException($"Could not find any text for the clinical impression in: {element}");
+            var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
+            if (string.IsNullOrWhiteSpace(textEl))
+                throw new InvalidOperationException($"Could not find any text for the clinical impression in: {element}");
 
-                clinicalImpression.Note.Add(new Annotation
-                {
-                    Text = new Markdown(textEl)
-                });
+            clinicalImpression.Note.Add(new Annotation
+            {
+                Text = new Markdown(textEl)
+            });
 
-                clinicalImpression.DateElement = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToFhirDateTime();
-                clinicalImpression.Code = element
-                    .FindCodeElementWithTranslation()?
-                    .ToCodeableConcept();
+            clinicalImpression.DateElement = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToFhirDateTime();
+            clinicalImpression.Code = element
+                .FindCodeElementWithTranslation()?
+                .ToCodeableConcept();
 
-                bundle.Entry.Add(new Bundle.EntryComponent
-                {
-                    FullUrl = $"urn:uuid:{id}",
-                    Resource = clinicalImpression
-                });
-            }
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{id}",
+                Resource = clinicalImpression
+            });
+
+            Resource = clinicalImpression;
         }
     }
 }

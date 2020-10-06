@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -29,16 +28,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public Resource Resource { get; private set; }
+
+        /// <inheritdoc />
+        public virtual void AddToBundle(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var authorElement = elements.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
-            if (authorElement == null)
-                return;
-
             var id = Guid.NewGuid();
             var provenance = new Provenance
             {
@@ -55,20 +53,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
             provenance.Target.Add(new ResourceReference(_targetResourceType + "/" + _targetId));
 
             // Date Recorded
-            var dateRecordedValue = authorElement
+            var dateRecordedValue = element
                 .Element(Defaults.DefaultNs + "time")?
                 .Attribute("value")?
                 .Value;
 
             if (string.IsNullOrWhiteSpace(dateRecordedValue))
-                throw new InvalidOperationException($"Could not find an authored time in: {authorElement}");
+                throw new InvalidOperationException($"Could not find an authored time in: {element}");
 
             provenance.Recorded = dateRecordedValue.ParseCCdaDateTimeOffset();
 
             // Agent
-            var assignedAuthorElement = authorElement.Element(Defaults.DefaultNs + "assignedAuthor");
+            var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
             if (assignedAuthorElement == null)
-                throw new InvalidOperationException($"Could not find an assigned author in: {authorElement}");
+                throw new InvalidOperationException($"Could not find an assigned author in: {element}");
 
             var practitionerConverter = new PractitionerConverter();
             practitionerConverter.AddToBundle(
@@ -111,6 +109,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 FullUrl = $"urn:uuid:{id}",
                 Resource = provenance
             });
+
+            Resource = provenance;
         }
     }
 }
