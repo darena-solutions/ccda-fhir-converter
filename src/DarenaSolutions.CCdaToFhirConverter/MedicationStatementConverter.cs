@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -10,41 +9,40 @@ using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class MedicationStatementConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into medication statement FHIR resources
+    /// </summary>
+    public class MedicationStatementConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MedicationStatementConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public MedicationStatementConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
-        /// <summary>
-        /// Gets the medication statement FHIR resource that was generated
-        /// </summary>
-        public MedicationStatement MedicationStatement { get; private set; }
+        /// <inheritdoc />
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            throw new InvalidOperationException(
+                "This converter is not intended to be used as a standalone converter. Medication statement elements must " +
+                "be determined before using this converter. This converter itself cannot determine medication statement resources");
+        }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var medicationStatement = new MedicationStatement
             {
                 Id = id,
-                Subject = new ResourceReference($"urn:uuid:{_patientId}")
+                Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
@@ -123,14 +121,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             if (assignedAuthorElement != null)
             {
-                var practitionerConverter = new PractitionerConverter();
-                practitionerConverter.AddToBundle(
+                var practitionerConverter = new PractitionerConverter(PatientId);
+                var practitioners = practitionerConverter.AddToBundle(
                     bundle,
                     new List<XElement> { assignedAuthorElement },
                     namespaceManager,
                     cacheManager);
 
-                medicationStatement.InformationSource = new ResourceReference($"urn:uuid:{practitionerConverter.PractitionerId}");
+                medicationStatement.InformationSource = new ResourceReference($"urn:uuid:{practitioners[0].Id}");
             }
 
             bundle.Entry.Add(new Bundle.EntryComponent
@@ -139,7 +137,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = medicationStatement
             });
 
-            MedicationStatement = medicationStatement;
+            return medicationStatement;
         }
     }
 }

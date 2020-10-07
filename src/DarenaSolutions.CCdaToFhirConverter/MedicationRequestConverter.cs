@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -10,42 +9,42 @@ using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class MedicationRequestConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA to medication request FHIR resources
+    /// </summary>
+    public class MedicationRequestConverter : BaseConverter
     {
-        private readonly string _patientId;
-        private readonly string _medicationId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MedicationRequestConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
-        /// <param name="medicationId">The id of the medication that is being referenced</param>
-        public MedicationRequestConverter(string patientId, string medicationId)
+        public MedicationRequestConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
-            _medicationId = medicationId;
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            throw new InvalidOperationException(
+                "This converter is not intended to be used as a standalone converter. Medication request elements must " +
+                "be determined before using this converter. This converter itself cannot determine medication request resources");
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var medicationRequest = new MedicationRequest
             {
                 Id = id,
                 Meta = new Meta(),
                 Intent = MedicationRequest.medicationRequestIntent.Order,
-                Subject = new ResourceReference($"urn:uuid:{_patientId}"),
-                Medication = new ResourceReference($"urn:uuid:{_medicationId}")
+                Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
             medicationRequest.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"));
@@ -88,20 +87,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             medicationRequest.AuthoredOnElement = new FhirDateTime(timeValue.ParseCCdaDateTimeOffset());
 
-            var practitionerConverter = new PractitionerConverter();
-            practitionerConverter.AddToBundle(
+            var practitionerConverter = new PractitionerConverter(PatientId);
+            var practitioners = practitionerConverter.AddToBundle(
                 bundle,
                 new List<XElement> { assignedAuthorElement },
                 namespaceManager,
                 cacheManager);
 
-            medicationRequest.Requester = new ResourceReference($"urn:uuid:{practitionerConverter.PractitionerId}");
+            medicationRequest.Requester = new ResourceReference($"urn:uuid:{practitioners[0].Id}");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = medicationRequest
             });
+
+            return medicationRequest;
         }
     }
 }

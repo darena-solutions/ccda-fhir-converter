@@ -4,8 +4,6 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using DarenaSolutions.CCdaToFhirConverter.Constants;
-using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -25,8 +23,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void CustomizeMapping(XElement element, Observation observation)
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
+            var xPath = "//n1:section/n1:code[@code='29762-2']/../n1:entry/n1:observation/n1:code[@code='72166-2']/..";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
+            Bundle bundle,
+            XElement element,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager)
+        {
+            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-smokingstatus"));
 
@@ -46,6 +56,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             observation.Effective = null;
             observation.Issued = dateTimeElement.ToDateTimeOffset(TimeSpan.Zero);
+
+            return observation;
         }
     }
 }

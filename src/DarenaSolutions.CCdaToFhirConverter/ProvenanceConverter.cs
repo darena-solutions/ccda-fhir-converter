@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -12,33 +11,32 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// <summary>
     /// A model used with CCDA elements that require provenance to verify who and when the clinical data was recorded.
     /// </summary>
-    public class ProvenanceConverter : IResourceConverter
+    public class ProvenanceConverter : BaseConverter
     {
-        private readonly ResourceType _targetResourceType;
-        private readonly string _targetId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ProvenanceConverter"/> class
         /// </summary>
-        /// <param name="targetResourceType">The target resource, in which the provenance is associated with</param>
-        /// <param name="targetId">The target id, in which the provenance is associated with</param>
-        public ProvenanceConverter(ResourceType targetResourceType, string targetId)
+        /// <param name="patientId">The id of the patient referenced in the CCDA</param>
+        public ProvenanceConverter(string patientId)
+            : base(patientId)
         {
-            _targetResourceType = targetResourceType;
-            _targetId = targetId;
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            throw new InvalidOperationException(
+                "This converter is not intended to be used as a standalone converter. Provenance elements must be " +
+                "determined before using this converter. This converter itself cannot determine provenance resources");
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var authorElement = elements.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
-            if (authorElement == null)
-                return;
-
             var id = Guid.NewGuid();
             var provenance = new Provenance
             {
@@ -51,27 +49,24 @@ namespace DarenaSolutions.CCdaToFhirConverter
             provenance.Meta.ProfileElement.Add(
                 new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
 
-            // Target
-            provenance.Target.Add(new ResourceReference(_targetResourceType + "/" + _targetId));
-
             // Date Recorded
-            var dateRecordedValue = authorElement
+            var dateRecordedValue = element
                 .Element(Defaults.DefaultNs + "time")?
                 .Attribute("value")?
                 .Value;
 
             if (string.IsNullOrWhiteSpace(dateRecordedValue))
-                throw new InvalidOperationException($"Could not find an authored time in: {authorElement}");
+                throw new InvalidOperationException($"Could not find an authored time in: {element}");
 
             provenance.Recorded = dateRecordedValue.ParseCCdaDateTimeOffset();
 
             // Agent
-            var assignedAuthorElement = authorElement.Element(Defaults.DefaultNs + "assignedAuthor");
+            var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
             if (assignedAuthorElement == null)
-                throw new InvalidOperationException($"Could not find an assigned author in: {authorElement}");
+                throw new InvalidOperationException($"Could not find an assigned author in: {element}");
 
-            var practitionerConverter = new PractitionerConverter();
-            practitionerConverter.AddToBundle(
+            var practitionerConverter = new PractitionerConverter(PatientId);
+            var practitioners = practitionerConverter.AddToBundle(
                 bundle,
                 new List<XElement> { assignedAuthorElement },
                 namespaceManager,
@@ -79,10 +74,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var representedOrganizationElement =
                 assignedAuthorElement.Element(Defaults.DefaultNs + "representedOrganization");
-            var representedOrganizationConverter = new RepresentedOrganizationConverter();
-            representedOrganizationConverter.AddToBundle(
+            var representedOrganizationConverter = new OrganizationConverter();
+            var representedOrganization = representedOrganizationConverter.AddToBundle(
                 bundle,
-                new List<XElement> { representedOrganizationElement },
+                representedOrganizationElement,
                 namespaceManager,
                 cacheManager);
 
@@ -100,8 +95,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         }
                     }
                 },
-                Who = new ResourceReference($"urn:uuid:{practitionerConverter.PractitionerId}"),
-                OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganizationConverter.OrganizationId}")
+                Who = new ResourceReference($"urn:uuid:{practitioners[0].Id}"),
+                OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganization.Id}")
             };
 
             provenance.Agent.Add(agent);
@@ -111,6 +106,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 FullUrl = $"urn:uuid:{id}",
                 Resource = provenance
             });
+
+            return provenance;
         }
     }
 }

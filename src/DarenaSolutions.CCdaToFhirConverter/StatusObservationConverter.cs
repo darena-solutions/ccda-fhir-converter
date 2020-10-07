@@ -1,72 +1,89 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using DarenaSolutions.CCdaToFhirConverter.Constants;
-using DarenaSolutions.CCdaToFhirConverter.Extensions;
+using System.Xml.XPath;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class StatusObservationConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into observation FHIR resources. These elements indicate a
+    /// some physical
+    /// status observation of the patient
+    /// </summary>
+    public class StatusObservationConverter : BaseObservationConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="StatusObservationConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public StatusObservationConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            return
+                GetFunctionalStatusElements(cCda, namespaceManager)
+                    .Concat(GetMentalStatusElements(cCda, namespaceManager))
+                    .Concat(GetHealthConcernElements(cCda, namespaceManager));
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            foreach (var element in elements)
-            {
-                var id = Guid.NewGuid().ToString();
-                var observation = new Observation
-                {
-                    Id = id,
-                    Status = ObservationStatus.Final,
-                    Subject = new ResourceReference($"urn:uuid:{_patientId}")
-                };
+            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
+            observation
+                .Category
+                .First()
+                .Coding
+                .First()
+                .Code = "exam";
 
-                var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-                foreach (var identifierElement in identifierElements)
-                {
-                    observation.Identifier.Add(identifierElement.ToIdentifier());
-                }
+            return observation;
+        }
 
-                observation.Category.Add(new CodeableConcept(
-                    "http://terminology.hl7.org/CodeSystem/observation-category",
-                    "exam",
-                    "Exam",
-                    null));
+        /// <summary>
+        /// Gets the functional status elements from the CCDA
+        /// </summary>
+        /// <param name="cCda">The root CCDA document</param>
+        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the root CCDA document</param>
+        /// <returns>The functional status elements from the CCDA</returns>
+        protected virtual IEnumerable<XElement> GetFunctionalStatusElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='47420-5']/../n1:entry/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
-                observation.Code = element
-                    .FindCodeElementWithTranslation()?
-                    .ToCodeableConcept();
+        /// <summary>
+        /// Gets the mental status elements from the CCDA
+        /// </summary>
+        /// <param name="cCda">The root CCDA document</param>
+        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the root CCDA document</param>
+        /// <returns>The mental status elements from the CCDA</returns>
+        protected virtual IEnumerable<XElement> GetMentalStatusElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='10190-7']/../n1:entry/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
-                if (observation.Code == null)
-                    throw new InvalidOperationException($"A code could not be found for the status observation: {element}");
-
-                observation.Effective = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToDateTimeElement();
-                observation.Value = element.Element(Defaults.DefaultNs + "value")?.ToFhirElementBasedOnType();
-
-                bundle.Entry.Add(new Bundle.EntryComponent
-                {
-                    FullUrl = $"urn:uuid:{id}",
-                    Resource = observation
-                });
-            }
+        /// <summary>
+        /// Gets the health concern elements from the CCDA
+        /// </summary>
+        /// <param name="cCda">The root CCDA document</param>
+        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the root CCDA document</param>
+        /// <returns>The health concern elements from the CCDA</returns>
+        protected virtual IEnumerable<XElement> GetHealthConcernElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='75310-3']/../n1:entry/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
         }
     }
 }

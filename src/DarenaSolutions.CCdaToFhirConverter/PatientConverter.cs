@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
@@ -11,36 +12,25 @@ using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class PatientConverter : IResourceConverter
+    /// <summary>
+    /// Convert that converts an element in the CCDA to a patient FHIR resource
+    /// </summary>
+    public class PatientConverter : BaseSingleResourceConverter
     {
-        private readonly string _organizationId;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PatientConverter"/> class
-        /// </summary>
-        /// <param name="organizationId">The id of the represented organization that generated the CCDA</param>
-        public PatientConverter(string organizationId)
+        /// <inheritdoc />
+        protected override XElement GetPrimaryElement(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
-            _organizationId = organizationId;
+            var xPath = "n1:ClinicalDocument/n1:recordTarget/n1:patientRole";
+            return cCda.XPathSelectElement(xPath, namespaceManager);
         }
 
-        /// <summary>
-        /// Gets the id of the FHIR patient resource that was generated
-        /// </summary>
-        public string PatientId { get; private set; }
-
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var patient = new Patient
             {
@@ -227,15 +217,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
             }
 
-            patient.ManagingOrganization = new ResourceReference($"urn:uuid:{_organizationId}");
-
             bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = patient
             });
 
-            PatientId = id;
+            return patient;
         }
 
         private Extension GetRaceOrEthnicGroupExtension(List<XElement> defaultCodes, List<XElement> stdcCodes, bool isRace)

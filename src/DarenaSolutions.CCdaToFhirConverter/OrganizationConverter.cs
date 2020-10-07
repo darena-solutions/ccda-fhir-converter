@@ -1,33 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class RepresentedOrganizationConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts an element in the CCDA to an organization FHIR resource
+    /// </summary>
+    public class OrganizationConverter : BaseSingleResourceConverter
     {
-        /// <summary>
-        /// Gets the id of the FHIR organization resource that was generated
-        /// </summary>
-        public string OrganizationId { get; private set; }
+        /// <inheritdoc />
+        protected override XElement GetPrimaryElement(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:representedOrganization";
+            return cCda.XPathSelectElement(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var organization = new Organization
             {
@@ -47,10 +46,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var identifier = identifierElement.ToIdentifier();
                 if (cacheManager.TryGetResource(ResourceType.Organization, identifier.System, identifier.Value, out var resource))
-                {
-                    OrganizationId = resource.Id;
-                    return;
-                }
+                    return resource;
 
                 organization.Identifier.Add(identifier);
                 cacheManager.Add(organization, identifier.System, identifier.Value);
@@ -78,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = organization
             });
 
-            OrganizationId = id;
+            return organization;
         }
     }
 }
