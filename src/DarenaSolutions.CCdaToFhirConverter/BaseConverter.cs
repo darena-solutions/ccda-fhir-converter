@@ -41,6 +41,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var elements = GetPrimaryElements(cCda, namespaceManager);
             foreach (var element in elements)
             {
+                if (element == null)
+                    continue;
+
                 var resource = PerformElementConversion(
                     bundle,
                     element,
@@ -69,6 +72,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             foreach (var element in elements)
             {
+                if (element == null)
+                    continue;
+
                 var resource = PerformElementConversion(
                     bundle,
                     element,

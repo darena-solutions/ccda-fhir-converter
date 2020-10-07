@@ -17,6 +17,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             ConvertedCacheManager cacheManager)
         {
             var element = GetPrimaryElement(cCda, namespaceManager);
+            if (element == null)
+                return null;
+
             return PerformElementConversion(
                 bundle,
                 element,
@@ -31,6 +34,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
+            if (element == null)
+                return null;
+
             return PerformElementConversion(
                 bundle,
                 element,
