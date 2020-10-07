@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -26,7 +28,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <inheritdoc />
         protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
-            var xPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.5.1']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
+            var xPath = "//n1:section/n1:code[@code='11450-4']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
             return cCda.XPathSelectElements(xPath, namespaceManager);
         }
 
@@ -39,7 +41,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         {
             var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             condition.Code = element
-                .FindCodeElementWithTranslation()?
+                .FindCodeElementWithTranslation(codeElementName: "value")?
                 .ToCodeableConcept();
 
             if (condition.Code == null)
@@ -50,6 +52,21 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 "problem-list-item",
                 "Problem List Item",
                 null));
+
+            // Provenance
+            var authorElement = element.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
+            if (authorElement == null)
+                return condition;
+
+            var provenanceConverter = new ProvenanceConverter(PatientId);
+            var provenanceResources = provenanceConverter.AddToBundle(
+                bundle,
+                new List<XElement> { authorElement },
+                namespaceManager,
+                cacheManager);
+
+            var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
+            provenance.Target.Add(new ResourceReference($"{ResourceType.Condition}/{condition.Id}"));
 
             return condition;
         }
