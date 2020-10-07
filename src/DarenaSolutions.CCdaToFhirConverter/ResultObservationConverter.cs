@@ -1,5 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -19,8 +22,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void CustomizeMapping(XElement element, Observation observation)
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
+            var xPath = "//n1:section/n1:code[@code='30954-2']/../n1:entry/n1:organizer/n1:component/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
+            Bundle bundle,
+            XElement element,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager)
+        {
+            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"));
 
@@ -30,6 +45,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Coding
                 .First()
                 .Code = "laboratory";
+
+            return observation;
         }
     }
 }

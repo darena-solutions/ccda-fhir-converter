@@ -11,29 +11,65 @@ using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class AllergyIntoleranceConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA to allergy intolerance FHIR resources
+    /// </summary>
+    public class AllergyIntoleranceConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="AllergyIntoleranceConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public AllergyIntoleranceConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:component/n1:section/n1:code[@code='48765-2']/../n1:entry/n1:act/n1:entryRelationship/n1:observation";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            foreach (var element in elements)
+            var id = Guid.NewGuid().ToString();
+            var allergyIntolerance = new AllergyIntolerance
             {
+                Id = id,
+                Meta = new Meta(),
+                Patient = new ResourceReference($"urn:uuid:{PatientId}")
+            };
+
+            allergyIntolerance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance"));
+
+            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
+            foreach (var identifierElement in identifierElements)
+            {
+                allergyIntolerance.Identifier.Add(identifierElement.ToIdentifier());
+            }
+
+            var hasNoKnownDocumentedAllergies = false;
+            element.TryGetAttribute("negationInd", out var attributeValue);
+            if (string.Compare(attributeValue, "true", StringComparison.InvariantCultureIgnoreCase) == 0)
+                hasNoKnownDocumentedAllergies = true;
+
+            if (hasNoKnownDocumentedAllergies)
+            {
+                allergyIntolerance.Code = new CodeableConcept("http://snomed.info/sct", "716186003");
+                allergyIntolerance.VerificationStatus = new CodeableConcept("http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "unconfirmed");
+            }
+            else
+            {
+                var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
+                allergyIntolerance.Onset = effectiveTimeElement?.ToDateTimeElement();
+
                 CodeableConcept clinicalStatus = null;
                 var statusCodeElement = element.Element(Defaults.DefaultNs + "statusCode");
                 if (statusCodeElement != null)
@@ -57,114 +93,95 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     }
                 }
 
-                var observationsXPath = "n1:entryRelationship/n1:observation[n1:templateId[@root='2.16.840.1.113883.10.20.22.4.7']]";
-                var observations = element.XPathSelectElements(observationsXPath, namespaceManager);
-
-                foreach (var observation in observations)
+                if (clinicalStatus != null)
                 {
-                    var id = Guid.NewGuid();
-                    var allergyIntolerance = new AllergyIntolerance
-                    {
-                        Id = id.ToString(),
-                        Meta = new Meta(),
-                        Patient = new ResourceReference($"urn:uuid:{_patientId}")
-                    };
-
-                    allergyIntolerance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance"));
-
-                    var identifierElements = observation.Elements(Defaults.DefaultNs + "id");
-                    foreach (var identifierElement in identifierElements)
-                    {
-                        allergyIntolerance.Identifier.Add(identifierElement.ToIdentifier());
-                    }
-
-                    if (clinicalStatus != null)
-                        allergyIntolerance.ClinicalStatus = clinicalStatus;
-
-                    var codeElement = observation.Element(Defaults.DefaultNs + "value");
-                    if (codeElement == null)
-                        throw new InvalidOperationException($"No code element was found in: {observation}");
-
-                    allergyIntolerance.Code = codeElement.ToCodeableConcept();
-
-                    var effectiveTimeElement = observation.Element(Defaults.DefaultNs + "effectiveTime");
-                    allergyIntolerance.Onset = effectiveTimeElement?.ToDateTimeElement();
-
-                    var reactionCodeableConcept = observation
-                        .FindCodeElementWithTranslation("n1:participant/n1:participantRole/n1:playingEntity", namespaceManager)?
-                        .ToCodeableConcept();
-
-                    if (reactionCodeableConcept == null)
-                        throw new InvalidOperationException($"No substance element was found in: {observation}");
-
-                    var reaction = new AllergyIntolerance.ReactionComponent
-                    {
-                        Substance = reactionCodeableConcept
-                    };
-
-                    var obsEntryRelationships = observation.Elements(Defaults.DefaultNs + "entryRelationship");
-                    foreach (var obsEntryRelationship in obsEntryRelationships)
-                    {
-                        var templateIdValue = obsEntryRelationship
-                            .Element(Defaults.DefaultNs + "observation")?
-                            .Element(Defaults.DefaultNs + "templateId")?
-                            .Attribute("root")?
-                            .Value;
-
-                        switch (templateIdValue)
-                        {
-                            case "2.16.840.1.113883.10.20.22.4.9":
-                                var manifestationCodeableConcept = obsEntryRelationship
-                                    .FindCodeElementWithTranslation(
-                                        "n1:observation",
-                                        namespaceManager,
-                                        "value")?
-                                    .ToCodeableConcept();
-
-                                if (manifestationCodeableConcept == null)
-                                    throw new InvalidOperationException($"No manifestation element was found in: {obsEntryRelationship}");
-
-                                reaction.Manifestation.Add(manifestationCodeableConcept);
-                                var entryRelationshipEffectiveTimeElement = obsEntryRelationship
-                                    .Element(Defaults.DefaultNs + "observation")?
-                                    .Element(Defaults.DefaultNs + "effectiveTime");
-
-                                reaction.OnsetElement = entryRelationshipEffectiveTimeElement?.ToFhirDateTime();
-
-                                break;
-                            case "2.16.840.1.113883.10.20.22.4.8":
-                                var severityCodeableConcept = obsEntryRelationship
-                                    .FindCodeElementWithTranslation(
-                                        "n1:observation",
-                                        namespaceManager,
-                                        "value")?
-                                    .ToCodeableConcept();
-
-                                if (severityCodeableConcept == null)
-                                    throw new InvalidOperationException($"No severity element found in: {obsEntryRelationship}");
-
-                                var severityDisplay = severityCodeableConcept.Coding.First().Display;
-                                var severity = EnumUtility.ParseLiteral<AllergyIntolerance.AllergyIntoleranceSeverity>(severityDisplay, true);
-                                if (severity == null)
-                                    throw new InvalidOperationException($"Could not determine allergy intolerance severity from value '{severityDisplay}'");
-
-                                reaction.Severity = severity;
-
-                                break;
-                            default:
-                                continue;
-                        }
-                    }
-
-                    allergyIntolerance.Reaction.Add(reaction);
-
-                    bundle.Entry.Add(new Bundle.EntryComponent
-                    {
-                        FullUrl = $"urn:uuid:{id}",
-                        Resource = allergyIntolerance
-                    });
+                    allergyIntolerance.ClinicalStatus = clinicalStatus;
+                    allergyIntolerance.VerificationStatus = new CodeableConcept(
+                        "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification", "confirmed");
                 }
+
+                var substanceCodeableConcept = element
+                    .FindCodeElementWithTranslation("n1:participant/n1:participantRole/n1:playingEntity", namespaceManager)?
+                    .ToCodeableConcept();
+
+                if (substanceCodeableConcept == null)
+                    throw new InvalidOperationException($"No substance element was found in: {element}");
+
+                allergyIntolerance.Code = substanceCodeableConcept;
+
+                var reaction = new AllergyIntolerance.ReactionComponent();
+                var obsEntryRelationships = element.Elements(Defaults.DefaultNs + "entryRelationship");
+                foreach (var obsEntryRelationship in obsEntryRelationships)
+                {
+                    var templateIdValue = obsEntryRelationship
+                        .Element(Defaults.DefaultNs + "observation")?
+                        .Element(Defaults.DefaultNs + "templateId")?
+                        .Attribute("root")?
+                        .Value;
+
+                    switch (templateIdValue)
+                    {
+                        case "2.16.840.1.113883.10.20.22.4.9":
+                            var manifestationCodeableConcept = obsEntryRelationship
+                                .FindCodeElementWithTranslation(
+                                    "n1:observation",
+                                    namespaceManager,
+                                    "value")?
+                                .ToCodeableConcept();
+
+                            if (manifestationCodeableConcept == null && reaction.Manifestation.Count == 0)
+                                throw new InvalidOperationException($"No manifestation element was found in: {obsEntryRelationship}");
+
+                            reaction.Manifestation.Add(manifestationCodeableConcept);
+                            break;
+                        case "2.16.840.1.113883.10.20.22.4.8":
+                            var severityCodeableConcept = obsEntryRelationship
+                                .FindCodeElementWithTranslation(
+                                    "n1:observation",
+                                    namespaceManager,
+                                    "value")?
+                                .ToCodeableConcept();
+
+                            if (severityCodeableConcept == null)
+                                throw new InvalidOperationException($"No severity element found in: {obsEntryRelationship}");
+
+                            var severityDisplay = severityCodeableConcept.Coding.First().Display;
+                            var severity = EnumUtility.ParseLiteral<AllergyIntolerance.AllergyIntoleranceSeverity>(severityDisplay, true);
+                            if (severity == null)
+                                throw new InvalidOperationException($"Could not determine allergy intolerance severity from value '{severityDisplay}'");
+
+                            reaction.Severity = severity;
+                            break;
+                        default:
+                            continue;
+                    }
+                }
+
+                allergyIntolerance.Reaction.Add(reaction);
+
+                bundle.Entry.Add(new Bundle.EntryComponent
+                {
+                    FullUrl = $"urn:uuid:{id}",
+                    Resource = allergyIntolerance
+                });
+
+                // Provenance
+                var authorElement = element.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
+                if (authorElement == null)
+                    return allergyIntolerance;
+
+                var provenanceConverter = new ProvenanceConverter(PatientId);
+                var provenanceResources = provenanceConverter.AddToBundle(
+                    bundle,
+                    new List<XElement> { authorElement },
+                    namespaceManager,
+                    cacheManager);
+
+                var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
+                provenance.Target.Add(new ResourceReference($"{ResourceType.AllergyIntolerance}/{id}"));
             }
+
+            return allergyIntolerance;
         }
     }
 }

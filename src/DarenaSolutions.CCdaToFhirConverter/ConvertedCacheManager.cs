@@ -10,7 +10,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// "Patient|http://example.com/npi|123456789" as an entry. This can then be checked to ensure that the same practitioner
     /// is not added again.
     ///
-    /// This cache manager should be newly instantiated whenever <see cref="CCdaFhirConverter.ConvertCCda"/> is called
+    /// This cache manager should be newly instantiated whenever <see cref="CCdaToFhirExecutor.ConvertCCda"/> is called
     /// </summary>
     public class ConvertedCacheManager
     {

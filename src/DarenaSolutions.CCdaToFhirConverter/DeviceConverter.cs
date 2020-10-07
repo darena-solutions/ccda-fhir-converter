@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -9,80 +8,89 @@ using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class DeviceConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into device FHIR resources
+    /// </summary>
+    public class DeviceConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public DeviceConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='46264-8']/../n1:entry/n1:procedure/n1:participant/n1:participantRole";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            foreach (var element in elements)
+            var id = Guid.NewGuid().ToString();
+            var device = new Device
             {
-                var id = Guid.NewGuid().ToString();
-                var device = new Device
+                Id = id,
+                Meta = new Meta(),
+                Patient = new ResourceReference($"urn:uuid:{PatientId}")
+            };
+
+            device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
+
+            device.Type = element
+                .Element(Defaults.DefaultNs + "playingDevice")?
+                .Element(Defaults.DefaultNs + "code")?
+                .ToCodeableConcept();
+
+            if (device.Type == null)
+                throw new InvalidOperationException($"The device type could not be found in: {element}");
+
+            Device.UdiCarrierComponent udiCarrierComponent = null;
+            var barcodeEl = element.Element(Defaults.DefaultNs + "id");
+            if (barcodeEl != null)
+            {
+                var barcodeValue = barcodeEl.Attribute("extension")?.Value;
+                if (string.IsNullOrWhiteSpace(barcodeValue))
+                    continue;
+
+                if (cacheManager.Contains(ResourceType.Device, null, barcodeValue))
+                    continue;
+
+                udiCarrierComponent = new Device.UdiCarrierComponent
                 {
-                    Id = id,
-                    Meta = new Meta(),
-                    Patient = new ResourceReference($"urn:uuid:{_patientId}")
+                    CarrierHRF = barcodeValue
                 };
 
-                device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
+                cacheManager.Add(device, null, barcodeValue);
+            }
 
-                device.Type = element
-                    .Element(Defaults.DefaultNs + "playingDevice")?
-                    .Element(Defaults.DefaultNs + "code")?
-                    .ToCodeableConcept();
+            var typeCoding = device.Type.Coding.First();
+            if (!string.IsNullOrWhiteSpace(typeCoding.Code))
+            {
+                udiCarrierComponent ??= new Device.UdiCarrierComponent();
+                udiCarrierComponent.DeviceIdentifier = typeCoding.Code;
+            }
 
-                if (device.Type == null)
-                    throw new InvalidOperationException($"The device type could not be found in: {element}");
+            var scopingEntityValue = element
+                .Element(Defaults.DefaultNs + "scopingEntity")?
+                .Element(Defaults.DefaultNs + "id")?
+                .Attribute("root")?
+                .Value;
 
-                Device.UdiCarrierComponent udiCarrierComponent = null;
-                var barcodeEl = element.Element(Defaults.DefaultNs + "id");
-                if (barcodeEl != null)
-                {
-                    var barcodeValue = barcodeEl.Attribute("extension")?.Value;
-                    if (string.IsNullOrWhiteSpace(barcodeValue))
-                        continue;
+            if (!string.IsNullOrWhiteSpace(scopingEntityValue))
+            {
+                udiCarrierComponent ??= new Device.UdiCarrierComponent();
 
-                    if (cacheManager.Contains(ResourceType.Device, null, barcodeValue))
-                        continue;
-
-                    udiCarrierComponent = new Device.UdiCarrierComponent
-                    {
-                        CarrierHRF = barcodeValue
-                    };
-
-                    cacheManager.Add(device, null, barcodeValue);
-                }
-
-                var typeCoding = device.Type.Coding.First();
-                if (!string.IsNullOrWhiteSpace(typeCoding.Code))
-                {
-                    udiCarrierComponent ??= new Device.UdiCarrierComponent();
-                    udiCarrierComponent.DeviceIdentifier = typeCoding.Code;
-                }
-
-                var scopingEntityValue = element
-                    .Element(Defaults.DefaultNs + "scopingEntity")?
-                    .Element(Defaults.DefaultNs + "id")?
-                    .Attribute("root")?
-                    .Value;
-
-                if (!string.IsNullOrWhiteSpace(scopingEntityValue))
+                if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
                 {
                     udiCarrierComponent ??= new Device.UdiCarrierComponent();
                     udiCarrierComponent.Issuer = scopingEntityValue;
@@ -98,13 +106,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     device.UdiCarrier.Add(udiCarrierComponent);
                 }
-
-                bundle.Entry.Add(new Bundle.EntryComponent
-                {
-                    FullUrl = $"urn:uuid:{id}",
-                    Resource = device
-                });
             }
+
+            return device;
         }
     }
 }

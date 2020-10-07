@@ -9,25 +9,35 @@ using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class PractitionerConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into practitioner FHIR resources
+    /// </summary>
+    public class PractitionerConverter : BaseConverter
     {
         /// <summary>
-        /// Gets the id of the practitioner FHIR resource that was generated
+        /// Initializes a new instance of the <see cref="PractitionerConverter"/> class
         /// </summary>
-        public string PractitionerId { get; private set; }
+        /// <param name="patientId">The id of the patient referenced in the CCDA</param>
+        public PractitionerConverter(string patientId)
+            : base(patientId)
+        {
+        }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            throw new InvalidOperationException(
+                "This converter is not intended to be used as a standalone converter. Practitioner elements must " +
+                "be determined before using this converter. This converter itself cannot determine practitioner resources");
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
             Bundle bundle,
-            IEnumerable<XElement> elements,
+            XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            var element = elements.FirstOrDefault();
-            if (element == null)
-                return;
-
             var id = Guid.NewGuid().ToString();
             var practitioner = new Practitioner
             {
@@ -42,10 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var identifier = identifierElement.ToIdentifier(true);
                 if (cacheManager.TryGetResource(ResourceType.Practitioner, identifier.System, identifier.Value, out var resource))
-                {
-                    PractitionerId = resource.Id;
-                    return;
-                }
+                    return resource;
 
                 practitioner.Identifier.Add(identifier);
                 cacheManager.Add(practitioner, identifier.System, identifier.Value);
@@ -98,7 +105,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = practitioner
             });
 
-            PractitionerId = id;
+            return practitioner;
         }
     }
 }
