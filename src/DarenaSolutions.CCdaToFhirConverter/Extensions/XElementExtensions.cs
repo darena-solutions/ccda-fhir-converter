@@ -564,6 +564,9 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case "pq":
                     // Dimensioned quantity -> Simple quantity
                     return self.ToSimpleQuantity();
+                case "ts":
+                    // Point in time -> DateTime or Period element
+                    return self.ToDateTimeElement();
                 default:
                     throw new InvalidOperationException(
                         $"The type '{type}' is not recognized and cannot be converted to its FHIR represented " +

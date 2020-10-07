@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
@@ -51,30 +53,27 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Element(Defaults.DefaultNs + "code")?
                 .ToCodeableConcept();
 
-            if (device.Type == null)
-                throw new InvalidOperationException($"The device type could not be found in: {element}");
-
             Device.UdiCarrierComponent udiCarrierComponent = null;
             var barcodeEl = element.Element(Defaults.DefaultNs + "id");
             if (barcodeEl != null)
             {
                 var barcodeValue = barcodeEl.Attribute("extension")?.Value;
-                if (string.IsNullOrWhiteSpace(barcodeValue))
-                    continue;
-
-                if (cacheManager.Contains(ResourceType.Device, null, barcodeValue))
-                    continue;
-
-                udiCarrierComponent = new Device.UdiCarrierComponent
+                if (!string.IsNullOrWhiteSpace(barcodeValue))
                 {
-                    CarrierHRF = barcodeValue
-                };
+                    if (cacheManager.TryGetResource(ResourceType.Device, null, barcodeValue, out var resource))
+                        return resource;
 
-                cacheManager.Add(device, null, barcodeValue);
+                    udiCarrierComponent = new Device.UdiCarrierComponent
+                    {
+                        CarrierHRF = barcodeValue
+                    };
+
+                    cacheManager.Add(device, null, barcodeValue);
+                }
             }
 
-            var typeCoding = device.Type.Coding.First();
-            if (!string.IsNullOrWhiteSpace(typeCoding.Code))
+            var typeCoding = device.Type?.Coding.FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(typeCoding?.Code))
             {
                 udiCarrierComponent ??= new Device.UdiCarrierComponent();
                 udiCarrierComponent.DeviceIdentifier = typeCoding.Code;
@@ -89,22 +88,55 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (!string.IsNullOrWhiteSpace(scopingEntityValue))
             {
                 udiCarrierComponent ??= new Device.UdiCarrierComponent();
+                udiCarrierComponent.Issuer = scopingEntityValue;
+            }
 
-                if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
+            if (udiCarrierComponent != null)
+                device.UdiCarrier.Add(udiCarrierComponent);
+
+            var deviceComponentsXPath = "../../n1:entryRelationship/n1:organizer/n1:component/n1:observation";
+            var deviceComponents = element.XPathSelectElements(deviceComponentsXPath, namespaceManager);
+
+            foreach (var component in deviceComponents)
+            {
+                var code = component
+                    .Element(Defaults.DefaultNs + "code")?
+                    .Attribute("code")?
+                    .Value;
+
+                var valueEl = component.Element(Defaults.DefaultNs + "value");
+                if (valueEl == null)
+                    continue;
+
+                switch (code)
                 {
-                    udiCarrierComponent ??= new Device.UdiCarrierComponent();
-                    udiCarrierComponent.Issuer = scopingEntityValue;
-                }
+                    case "C101669":
+                        if (valueEl.ToFhirElementBasedOnType() is FhirDateTime manufactureDateTime)
+                            device.ManufactureDateElement = manufactureDateTime;
 
-                if (udiCarrierComponent != null)
-                {
-                    if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
-                        throw new InvalidOperationException($"The device identifier could not be found in: {element}");
+                        break;
+                    case "C101670":
+                        if (valueEl.ToFhirElementBasedOnType() is FhirDateTime expirationDateTime)
+                            device.ExpirationDateElement = expirationDateTime;
 
-                    if (string.IsNullOrWhiteSpace(udiCarrierComponent.CarrierHRF))
-                        throw new InvalidOperationException($"A device barcode value could not be found in: {element}");
+                        break;
+                    case "C101671":
+                        if (valueEl.ToFhirElementBasedOnType() is FhirString serialNumber)
+                            device.SerialNumber = serialNumber.Value;
 
-                    device.UdiCarrier.Add(udiCarrierComponent);
+                        break;
+                    case "C101672":
+                        if (valueEl.ToFhirElementBasedOnType() is FhirString lotNumber)
+                            device.LotNumber = lotNumber.Value;
+
+                        break;
+                    case "C113843":
+                        if (valueEl.ToFhirElementBasedOnType() is FhirString distinctIdentifier)
+                            device.DistinctIdentifier = distinctIdentifier.Value;
+
+                        break;
+                    default:
+                        continue;
                 }
             }
 
