@@ -28,7 +28,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public Resource AddToBundle(
+        public virtual Resource AddToBundle(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,

@@ -62,7 +62,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// need to perform finding elements. In this overload, <see cref="GetPrimaryElements"/> IS NOT called and is skipped.
         /// For each element, <see cref="PerformElementConversion"/> will be called
         /// </remarks>
-        public List<Resource> AddToBundle(
+        public virtual List<Resource> AddToBundle(
             Bundle bundle,
             IEnumerable<XElement> elements,
             XmlNamespaceManager namespaceManager,
