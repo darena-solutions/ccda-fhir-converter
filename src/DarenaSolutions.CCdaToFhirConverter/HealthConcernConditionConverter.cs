@@ -32,15 +32,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
-
-            var condition = (Condition)Resources[^1];
+            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
 
             // Get the value from the observation element
             var xPath = "../../n1:entry/n1:observation";
@@ -66,6 +64,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 "health-concern",
                 "Health Concern",
                 null));
+
+            return condition;
         }
     }
 }

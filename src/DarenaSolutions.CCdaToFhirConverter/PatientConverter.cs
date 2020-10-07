@@ -25,7 +25,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -223,7 +223,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = patient
             });
 
-            Resource = patient;
+            return patient;
         }
 
         private Extension GetRaceOrEthnicGroupExtension(List<XElement> defaultCodes, List<XElement> stdcCodes, bool isRace)

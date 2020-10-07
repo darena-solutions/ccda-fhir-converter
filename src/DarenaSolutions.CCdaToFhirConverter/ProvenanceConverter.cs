@@ -31,7 +31,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -66,7 +66,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 throw new InvalidOperationException($"Could not find an assigned author in: {element}");
 
             var practitionerConverter = new PractitionerConverter(PatientId);
-            practitionerConverter.AddToBundle(
+            var practitioners = practitionerConverter.AddToBundle(
                 bundle,
                 new List<XElement> { assignedAuthorElement },
                 namespaceManager,
@@ -75,7 +75,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var representedOrganizationElement =
                 assignedAuthorElement.Element(Defaults.DefaultNs + "representedOrganization");
             var representedOrganizationConverter = new OrganizationConverter();
-            representedOrganizationConverter.AddToBundle(
+            var representedOrganization = representedOrganizationConverter.AddToBundle(
                 bundle,
                 representedOrganizationElement,
                 namespaceManager,
@@ -95,8 +95,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         }
                     }
                 },
-                Who = new ResourceReference($"urn:uuid:{practitionerConverter.Resources[0].Id}"),
-                OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganizationConverter.Resource.Id}")
+                Who = new ResourceReference($"urn:uuid:{practitioners[0].Id}"),
+                OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganization.Id}")
             };
 
             provenance.Agent.Add(agent);
@@ -107,7 +107,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = provenance
             });
 
-            Resources.Add(provenance);
+            return provenance;
         }
     }
 }

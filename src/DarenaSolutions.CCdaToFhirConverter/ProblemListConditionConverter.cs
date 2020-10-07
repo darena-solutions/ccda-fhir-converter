@@ -31,15 +31,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
-
-            var condition = (Condition)Resources[^1];
+            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             condition.Code = element
                 .FindCodeElementWithTranslation()?
                 .ToCodeableConcept();
@@ -52,6 +50,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 "problem-list-item",
                 "Problem List Item",
                 null));
+
+            return condition;
         }
     }
 }

@@ -32,7 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -100,7 +100,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (representedOrganizationElement != null)
             {
                 var representedOrganizationConverter = new OrganizationConverter();
-                representedOrganizationConverter.AddToBundle(
+                var representedOrganization = representedOrganizationConverter.AddToBundle(
                     bundle,
                     representedOrganizationElement,
                     namespaceManager,
@@ -108,7 +108,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 immunization.Performer.Add(new Immunization.PerformerComponent
                 {
-                    Actor = new ResourceReference($"urn:uuid:{representedOrganizationConverter.Resource.Id}")
+                    Actor = new ResourceReference($"urn:uuid:{representedOrganization.Id}")
                 });
             }
 
@@ -118,7 +118,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = immunization
             });
 
-            Resources.Add(immunization);
+            return immunization;
         }
     }
 }

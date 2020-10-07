@@ -31,7 +31,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -74,8 +74,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = procedure
             });
 
-            Resources.Add(procedure);
-
             var participantRoleEl = element
                 .Element(Defaults.DefaultNs + "participant")?
                 .Element(Defaults.DefaultNs + "participantRole");
@@ -85,10 +83,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var deviceConverter = new DeviceConverter(PatientId);
                 deviceConverter.AddToBundle(
                     bundle,
-                    participantRoleEl,
+                    new List<XElement> { participantRoleEl },
                     namespaceManager,
                     cacheManager);
             }
+
+            return procedure;
         }
     }
 }

@@ -570,36 +570,5 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                         $"type");
             }
         }
-
-        public static string GetPath(this XElement self)
-        {
-            return BuildPath(self, new Queue<string>());
-        }
-
-        private static string BuildPath(XElement element, Queue<string> paths)
-        {
-            var name = element.Name.LocalName;
-            var parent = element.Parent;
-
-            if (parent != null)
-            {
-                var i = -1;
-                foreach (var childElement in parent.Elements())
-                {
-                    i++;
-                    if (childElement == element)
-                        break;
-                }
-
-                if (i != 0)
-                    name += $"[{i}]";
-            }
-
-            paths.Enqueue(name);
-            if (parent != null)
-                BuildPath(parent, paths);
-
-            return string.Join("/", paths);
-        }
     }
 }

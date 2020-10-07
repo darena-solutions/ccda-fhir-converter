@@ -32,7 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -52,10 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var identifier = identifierElement.ToIdentifier(true);
                 if (cacheManager.TryGetResource(ResourceType.Practitioner, identifier.System, identifier.Value, out var resource))
-                {
-                    Resources.Add(resource);
-                    return;
-                }
+                    return resource;
 
                 practitioner.Identifier.Add(identifier);
                 cacheManager.Add(practitioner, identifier.System, identifier.Value);
@@ -108,7 +105,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = practitioner
             });
 
-            Resources.Add(practitioner);
+            return practitioner;
         }
     }
 }

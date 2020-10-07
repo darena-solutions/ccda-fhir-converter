@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter.Extensions
@@ -20,6 +22,21 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             var offset = self.ToDateTimeOffset(TimeSpan.Zero);
             return new Date(offset.Year, offset.Month, offset.Day);
+        }
+
+        /// <summary>
+        /// Retrieves the first resource in the list cast to a specific type
+        /// </summary>
+        /// <typeparam name="T">The type to cast to</typeparam>
+        /// <param name="self">The source list of resources</param>
+        /// <returns>The first resource in the list cast to the specified type</returns>
+        public static T GetFirstResourceAsType<T>(this List<Resource> self)
+            where T : Resource
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            return (T)self.First();
         }
     }
 }

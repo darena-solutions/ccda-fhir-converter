@@ -10,19 +10,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
     public abstract class BaseSingleResourceConverter : ISingleResourceConverter
     {
         /// <inheritdoc />
-        public Resource Resource { get; protected set; }
-
-        /// <inheritdoc />
-        public void AddToBundle(
+        public Resource AddToBundle(
             Bundle bundle,
             XDocument cCda,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            Resource = null;
-
             var element = GetPrimaryElement(cCda, namespaceManager);
-            PerformElementConversion(
+            return PerformElementConversion(
                 bundle,
                 element,
                 namespaceManager,
@@ -30,14 +25,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public void AddToBundle(
+        public Resource AddToBundle(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            Resource = null;
-            PerformElementConversion(
+            return PerformElementConversion(
                 bundle,
                 element,
                 namespaceManager,
@@ -60,7 +54,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the element</param>
         /// <param name="cacheManager">A cache manager that can be used to determine if a particular resource has already
         /// been converted and added to the bundle. It is up to each implementation to add entries to this cache.</param>
-        protected abstract void PerformElementConversion(
+        /// <returns>The resource that was converted and added to the bundle</returns>
+        protected abstract Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,

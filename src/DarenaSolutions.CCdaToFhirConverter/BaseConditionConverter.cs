@@ -22,7 +22,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -48,23 +48,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             condition.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"));
 
-            var alreadyAdded = false;
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
                 var identifier = identifierElement.ToIdentifier();
-                if (cacheManager.Contains(ResourceType.Condition, identifier.System, identifier.Value))
-                {
-                    alreadyAdded = true;
-                    break;
-                }
+                if (cacheManager.TryGetResource(ResourceType.Condition, identifier.System, identifier.Value, out var resource))
+                    return resource;
 
                 condition.Identifier.Add(identifier);
                 cacheManager.Add(condition, identifier.System, identifier.Value);
             }
-
-            if (alreadyAdded)
-                return;
 
             condition.Onset = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?
@@ -76,7 +69,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = condition
             });
 
-            Resources.Add(condition);
+            return condition;
         }
     }
 }

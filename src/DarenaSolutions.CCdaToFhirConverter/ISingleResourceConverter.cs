@@ -10,11 +10,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
     public interface ISingleResourceConverter
     {
         /// <summary>
-        /// Gets the resource that was converted and added to the bundle
-        /// </summary>
-        public Resource Resource { get; }
-
-        /// <summary>
         /// Finds the relevant element in the root CCDA document and converts it into its FHIR resource representation.
         /// The resource that was converted and added to the bundle will be stored in <see cref="Resource"/>. Use this method
         /// when the converter should choose the element to convert
@@ -24,7 +19,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the root CCDA document</param>
         /// <param name="cacheManager">A cache manager that can be used to determine if a particular resource has already
         /// been converted and added to the bundle. It is up to each implementation to add entries to this cache.</param>
-        void AddToBundle(
+        /// <returns>The resource that was converted and added to the bundle</returns>
+        Resource AddToBundle(
             Bundle bundle,
             XDocument cCda,
             XmlNamespaceManager namespaceManager,
@@ -40,7 +36,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the element</param>
         /// <param name="cacheManager">A cache manager that can be used to determine if a particular resource has already
         /// been converted and added to the bundle. It is up to each implementation to add entries to this cache.</param>
-        void AddToBundle(
+        /// <returns>The resource that was converted and added to the bundle</returns>
+        Resource AddToBundle(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,

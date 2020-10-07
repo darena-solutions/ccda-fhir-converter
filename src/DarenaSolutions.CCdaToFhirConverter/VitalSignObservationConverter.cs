@@ -29,15 +29,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
-
-            var observation = (Observation)Resources[^1];
+            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
 
@@ -47,6 +45,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Coding
                 .First()
                 .Code = "vital-signs";
+
+            return observation;
         }
     }
 }

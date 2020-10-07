@@ -34,15 +34,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
-
-            var condition = (Condition)Resources[^1];
+            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             var categoryCodeableConcept = element
                 .FindCodeElementWithTranslation()?
                 .ToCodeableConcept();
@@ -55,6 +53,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 "encounter-diagnosis",
                 "Encounter Diagnosis",
                 null));
+
+            return condition;
         }
     }
 }

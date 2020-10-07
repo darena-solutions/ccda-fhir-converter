@@ -35,7 +35,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -81,7 +81,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = carePlan
             });
 
-            Resources.Add(carePlan);
+            return carePlan;
         }
 
         /// <summary>

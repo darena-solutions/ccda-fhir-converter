@@ -1,31 +1,37 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
-    /// <inheritdoc />
-    public class DeviceConverter : IResourceConverter
+    /// <summary>
+    /// Converter that converts various elements in the CCDA into device FHIR resources
+    /// </summary>
+    public class DeviceConverter : BaseConverter
     {
-        private readonly string _patientId;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceConverter"/> class
         /// </summary>
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         public DeviceConverter(string patientId)
+            : base(patientId)
         {
-            _patientId = patientId;
         }
 
         /// <inheritdoc />
-        public Resource Resource { get; private set; }
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var xPath = "//n1:section/n1:code[@code='46264-8']/../n1:entry/n1:procedure/n1:participant/n1:participantRole";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
+        }
 
         /// <inheritdoc />
-        public virtual void AddToBundle(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -36,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 Id = id,
                 Meta = new Meta(),
-                Patient = new ResourceReference($"urn:uuid:{_patientId}")
+                Patient = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
             device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
@@ -48,8 +54,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var idValue = identifierElement.Attribute("extension")?.Value;
                 if (!string.IsNullOrWhiteSpace(idValue))
                 {
-                    if (cacheManager.Contains(ResourceType.Device, null, idValue))
-                        return;
+                    if (cacheManager.TryGetResource(ResourceType.Device, null, idValue, out var resource))
+                        return resource;
 
                     udiCarrierComponent = new Device.UdiCarrierComponent
                     {
@@ -97,7 +103,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = device
             });
 
-            Resource = device;
+            return device;
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using Hl7.Fhir.Model;
@@ -17,12 +16,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <param name="patientId">The id of the patient referenced in the CCDA</param>
         protected BaseConverter(string patientId)
         {
-            Resources = new List<Resource>();
             PatientId = patientId;
         }
-
-        /// <inheritdoc />
-        public List<Resource> Resources { get; }
 
         /// <summary>
         /// Gets the id of the patient referenced in the CCDA
@@ -35,23 +30,27 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// these elements. The method, <see cref="GetPrimaryElements"/>, is called in this overload which will then lead
         /// to <see cref="PerformElementConversion"/> being called for each element
         /// </remarks>
-        public virtual void AddToBundle(
+        public virtual List<Resource> AddToBundle(
             Bundle bundle,
             XDocument cCda,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            Resources.Clear();
+            var resources = new List<Resource>();
 
             var elements = GetPrimaryElements(cCda, namespaceManager);
             foreach (var element in elements)
             {
-                PerformElementConversion(
+                var resource = PerformElementConversion(
                     bundle,
                     element,
                     namespaceManager,
                     cacheManager);
+
+                resources.Add(resource);
             }
+
+            return resources;
         }
 
         /// <inheritdoc />
@@ -60,33 +59,26 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// need to perform finding elements. In this overload, <see cref="GetPrimaryElements"/> IS NOT called and is skipped.
         /// For each element, <see cref="PerformElementConversion"/> will be called
         /// </remarks>
-        public void AddToBundle(
+        public List<Resource> AddToBundle(
             Bundle bundle,
             IEnumerable<XElement> elements,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            Resources.Clear();
+            var resources = new List<Resource>();
 
             foreach (var element in elements)
             {
-                PerformElementConversion(
+                var resource = PerformElementConversion(
                     bundle,
                     element,
                     namespaceManager,
                     cacheManager);
-            }
-        }
 
-        /// <summary>
-        /// Retrieves the first resource in <see cref="Resources"/> cast to a specific type
-        /// </summary>
-        /// <typeparam name="T">The type to cast to</typeparam>
-        /// <returns>The first resource in <see cref="Resources"/> cast to the specified type</returns>
-        public T GetFirstResourceAsType<T>()
-            where T : Resource
-        {
-            return (T)Resources.First();
+                resources.Add(resource);
+            }
+
+            return resources;
         }
 
         /// <summary>
@@ -108,7 +100,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the element</param>
         /// <param name="cacheManager">A cache manager that can be used to determine if a particular resource has already
         /// been converted and added to the bundle. It is up to each implementation to add entries to this cache.</param>
-        protected abstract void PerformElementConversion(
+        /// <returns>The resource that was converted and added to the bundle</returns>
+        protected abstract Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,

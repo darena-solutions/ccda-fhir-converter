@@ -32,7 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -122,13 +122,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (assignedAuthorElement != null)
             {
                 var practitionerConverter = new PractitionerConverter(PatientId);
-                practitionerConverter.AddToBundle(
+                var practitioners = practitionerConverter.AddToBundle(
                     bundle,
                     new List<XElement> { assignedAuthorElement },
                     namespaceManager,
                     cacheManager);
 
-                medicationStatement.InformationSource = new ResourceReference($"urn:uuid:{practitionerConverter.Resources[0].Id}");
+                medicationStatement.InformationSource = new ResourceReference($"urn:uuid:{practitioners[0].Id}");
             }
 
             bundle.Entry.Add(new Bundle.EntryComponent
@@ -137,7 +137,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Resource = medicationStatement
             });
 
-            Resources.Add(medicationStatement);
+            return medicationStatement;
         }
     }
 }

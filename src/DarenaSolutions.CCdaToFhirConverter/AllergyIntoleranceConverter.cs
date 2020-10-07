@@ -33,7 +33,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override void PerformElementConversion(
+        protected override Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
@@ -165,23 +165,23 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     Resource = allergyIntolerance
                 });
 
-                Resources.Add(allergyIntolerance);
-
                 // Provenance
                 var authorElement = element.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
                 if (authorElement == null)
-                    return;
+                    return allergyIntolerance;
 
                 var provenanceConverter = new ProvenanceConverter(PatientId);
-                provenanceConverter.AddToBundle(
+                var provenanceResources = provenanceConverter.AddToBundle(
                     bundle,
                     new List<XElement> { authorElement },
                     namespaceManager,
                     cacheManager);
 
-                var provenance = provenanceConverter.GetFirstResourceAsType<Provenance>();
+                var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
                 provenance.Target.Add(new ResourceReference($"{ResourceType.AllergyIntolerance}/{id}"));
             }
+
+            return allergyIntolerance;
         }
     }
 }
