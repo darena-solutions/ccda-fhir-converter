@@ -6,7 +6,6 @@ using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
-using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
@@ -27,7 +26,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <inheritdoc />
         protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
-            var xPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.2.1']/../n1:entry/n1:substanceAdministration";
+            var xPath = "//n1:section/n1:code[@code='11369-6']/../n1:entry/n1:substanceAdministration";
             return cCda.XPathSelectElements(xPath, namespaceManager);
         }
 
@@ -44,7 +43,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Id = id,
                 Meta = new Meta(),
                 Patient = new ResourceReference($"urn:uuid:{PatientId}"),
-                PrimarySource = false
+                PrimarySource = true
             };
 
             immunization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-immunization"));
@@ -55,62 +54,36 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 immunization.Identifier.Add(identifierElement.ToIdentifier());
             }
 
-            var statusReasonXPath = "n1:entryRelationship/n1:observation/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.53']/../n1:code";
-            immunization.StatusReason = element.XPathSelectElement(statusReasonXPath, namespaceManager)?.ToCodeableConcept();
-
-            var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
-            var effectiveTime = effectiveTimeElement?.ToFhirDateTime();
-
-            if (effectiveTime == null)
-                throw new InvalidOperationException($"An immunization occurrence date time could not be found in: {element}");
-
-            immunization.Occurrence = effectiveTime;
-
-            var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:templateId[@root='2.16.840.1.113883.10.20.22.4.54']/../n1:manufacturedMaterial";
-            var manufacturedMaterialElement = element.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
-
-            if (manufacturedMaterialElement == null)
-                throw new InvalidOperationException($"An immunization manufactured material was not found in: {element}");
-
-            var manufacturedMaterialCodeElement = manufacturedMaterialElement.Element(Defaults.DefaultNs + "code");
-            if (manufacturedMaterialCodeElement == null)
-                throw new InvalidOperationException($"An immunization vaccine code was not found in: {element}");
-
-            immunization.VaccineCode = manufacturedMaterialCodeElement.ToCodeableConcept();
-
-            var statusCodeValue = element
+            var status = element
                 .Element(Defaults.DefaultNs + "statusCode")?
                 .Attribute("code")?
                 .Value;
 
-            if (string.IsNullOrWhiteSpace(statusCodeValue))
-                throw new InvalidOperationException($"An immunization status could not be found in: {element}");
+            immunization.Status = status == "completed"
+                ? Immunization.ImmunizationStatusCodes.Completed
+                : Immunization.ImmunizationStatusCodes.NotDone;
 
-            var statusCode = EnumUtility.ParseLiteral<Immunization.ImmunizationStatusCodes>(statusCodeValue, true);
-            if (statusCode == null)
-                throw new InvalidOperationException($"Could not determine immunization status code from '{statusCodeValue}'");
+            immunization.Occurrence = element
+                .Element(Defaults.DefaultNs + "effectiveTime")?
+                .ToFhirDateTime();
 
-            immunization.Status = statusCode;
-            immunization.Route = element.Element(Defaults.DefaultNs + "routeCode")?.ToCodeableConcept();
-            immunization.Site = element.Element(Defaults.DefaultNs + "approachSiteCode")?.ToCodeableConcept();
-
-            var representedOrganizationXPath = "n1:informant/n1:assignedEntity/n1:id[@root='FACILITY']/../n1:representedOrganization";
-            var representedOrganizationElement = element.XPathSelectElement(representedOrganizationXPath, namespaceManager);
-
-            if (representedOrganizationElement != null)
+            var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
+            var manufacturedMaterialEl = element.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
+            if (manufacturedMaterialEl != null)
             {
-                var representedOrganizationConverter = new OrganizationConverter();
-                var representedOrganization = representedOrganizationConverter.AddToBundle(
-                    bundle,
-                    representedOrganizationElement,
-                    namespaceManager,
-                    cacheManager);
+                immunization.VaccineCode = manufacturedMaterialEl
+                    .Element(Defaults.DefaultNs + "code")?
+                    .ToCodeableConcept();
 
-                immunization.Performer.Add(new Immunization.PerformerComponent
-                {
-                    Actor = new ResourceReference($"urn:uuid:{representedOrganization.Id}")
-                });
+                immunization.LotNumber = manufacturedMaterialEl
+                    .Element(Defaults.DefaultNs + "lotNumberText")?
+                    .GetFirstTextNode();
             }
+
+            var statusReasonCodeXPath = "n1:entryRelationship/n1:observation/n1:code";
+            immunization.StatusReason = element
+                .XPathSelectElement(statusReasonCodeXPath, namespaceManager)?
+                .ToCodeableConcept();
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {
