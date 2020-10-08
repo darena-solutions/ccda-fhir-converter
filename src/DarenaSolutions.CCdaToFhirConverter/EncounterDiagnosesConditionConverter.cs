@@ -41,12 +41,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             ConvertedCacheManager cacheManager)
         {
             var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
-            var categoryCodeableConcept = element
+            condition.Code = element
                 .FindCodeElementWithTranslation()?
                 .ToCodeableConcept();
 
-            if (categoryCodeableConcept == null)
-                throw new InvalidOperationException($"A condition category was not found in: {element}");
+            if (condition.Code == null)
+                throw new InvalidOperationException($"A condition code was not found in: {element}");
 
             condition.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/condition-category",
