@@ -49,7 +49,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 if (!string.IsNullOrWhiteSpace(nullFlavorValue))
                 {
                     if (!nullFlavorValue.IsValidNullFlavorValue())
-                        throw new InvalidOperationException($"The null flavor value '{nullFlavorValue}' is not recognized");
+                        throw new UnrecognizedValueException(self, nullFlavorValue, elementAttributeName: "nullFlavor");
 
                     coding.CodeElement = new Code
                     {
@@ -104,7 +104,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case null:
                     break;
                 default:
-                    throw new InvalidOperationException($"Could not determine address use from value '{useValue}'");
+                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use");
             }
 
             return address;
@@ -132,7 +132,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     use = null;
                     break;
                 default:
-                    throw new InvalidOperationException($"Could not determine name use from value '{useValue}'");
+                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use");
             }
 
             var name = new HumanName
@@ -171,7 +171,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             var value = self.Attribute("value")?.Value;
             if (string.IsNullOrWhiteSpace(value))
-                throw new InvalidOperationException($"No contact point value was found in: {self}");
+                throw new RequiredValueNotFoundException(self, "[@value]");
 
             ContactPoint.ContactPointUse? contactPointUse;
             var use = self.Attribute("use")?.Value;
@@ -198,7 +198,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     contactPointUse = null;
                     break;
                 default:
-                    throw new InvalidOperationException($"Could not determine contact point use from value '{use}'");
+                    throw new UnrecognizedValueException(self, use, elementAttributeName: "use");
             }
 
             ContactPoint.ContactPointSystem system;
@@ -403,40 +403,6 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         }
 
         /// <summary>
-        /// This will return a reference range for a laboratory result observation.
-        /// </summary>
-        /// <param name="self">The source element</param>
-        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the list of elements</param>
-        /// <returns>The FHIR <see cref="Observation.ReferenceRangeComponent"/> representation of the source element</returns>
-        public static Observation.ReferenceRangeComponent ToObservationReferenceRange(
-            this XElement self,
-            XmlNamespaceManager namespaceManager)
-        {
-            var referenceRangeLowXPath = "n1:referenceRange/n1:observationRange/n1:value/n1:low";
-            var referenceRangeLowElement = self.XPathSelectElement(referenceRangeLowXPath, namespaceManager);
-            Observation.ReferenceRangeComponent referenceRangeComponent = null;
-
-            if (referenceRangeLowElement != null)
-            {
-                referenceRangeComponent = new Observation.ReferenceRangeComponent();
-                referenceRangeComponent.Low = referenceRangeLowElement.ToSimpleQuantity();
-            }
-
-            var referenceRangeHighXPath = "n1:referenceRange/n1:observationRange/n1:value/n1:high";
-            var referenceRangeHighElement = self.XPathSelectElement(referenceRangeHighXPath, namespaceManager);
-
-            if (referenceRangeHighElement != null)
-            {
-                if (referenceRangeComponent == null)
-                    referenceRangeComponent = new Observation.ReferenceRangeComponent();
-
-                referenceRangeComponent.High = referenceRangeHighElement.ToSimpleQuantity();
-            }
-
-            return referenceRangeComponent;
-        }
-
-        /// <summary>
         /// Converts an element into its FHIR <see cref="SimpleQuantity" /> representation
         /// </summary>
         /// <param name="self">The source element</param>
@@ -446,7 +412,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             var value = self.Attribute("value")?.Value;
 
             if (!decimal.TryParse(value, out var dValue))
-                throw new InvalidOperationException($"The quantity value could not be parsed into a decimal in: {self}");
+                throw new UnrecognizedValueException(self, value, elementAttributeName: "value");
 
             return new SimpleQuantity { Value = dValue, Unit = self.Attribute("unit")?.Value };
         }
@@ -571,10 +537,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     // Point in time -> DateTime or Period element
                     return self.ToDateTimeElement();
                 default:
-                    throw new UnrecognizedValueException(
-                        self,
-                        type,
-                        elementAttributeName: "type");
+                    throw new UnrecognizedValueException(self, type, elementAttributeName: "type");
             }
         }
 
