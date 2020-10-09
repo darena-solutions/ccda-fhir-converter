@@ -4,6 +4,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -59,14 +60,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToCodeableConcept();
 
             if (procedure.Code == null)
-                throw new InvalidOperationException($"No code element was found in: {element}");
+                throw new RequiredValueNotFoundException(element, "code");
 
             procedure.Performed = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
             if (procedure.Performed == null)
-                throw new InvalidOperationException($"A procedure occurrence date time could not be found in: {element}");
+                throw new RequiredValueNotFoundException(element, "effectiveTime");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {
