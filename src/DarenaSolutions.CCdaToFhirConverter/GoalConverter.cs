@@ -4,6 +4,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -73,21 +74,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             var descriptionEl = element.Element(Defaults.DefaultNs + "value");
-            var description = descriptionEl?.ToFhirElementBasedOnType();
+            var description = descriptionEl?.ToFhirElementBasedOnType("st");
 
             if (description == null)
-                throw new InvalidOperationException($"The goal description could not be found in: {element}");
-
-            if (!(description is FhirString descriptionStr))
-            {
-                throw new InvalidOperationException(
-                    $"The goal description is expected to be a plain text value. However, an unrecognized " +
-                    $"value was found in: {description}");
-            }
+                throw new RequiredValueNotFoundException(element, "value");
 
             goal.Description = new CodeableConcept
             {
-                Text = descriptionStr.Value
+                Text = ((FhirString)description).Value
             };
 
             bundle.Entry.Add(new Bundle.EntryComponent
