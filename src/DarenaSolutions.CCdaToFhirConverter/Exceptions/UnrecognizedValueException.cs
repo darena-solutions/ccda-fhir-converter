@@ -69,7 +69,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
             if (!string.IsNullOrWhiteSpace(elementAttributeName))
                 fullPath += $"[@{elementAttributeName}]";
 
-            return $"The value, '{unrecognizedValue}', and path '{fullPath}' is unrecognized";
+            return $"The value, '{unrecognizedValue}', at path '{fullPath}' is unrecognized";
         }
     }
 }

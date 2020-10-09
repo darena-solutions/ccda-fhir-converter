@@ -5,6 +5,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter.Extensions
@@ -535,8 +536,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// extension
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="expectedTypes">Provide a list of expected types. If a list is provided and the type that is read
+        /// does not exist in this list, an exception will be thrown</param>
         /// <returns>The FHIR representation of the source element, based on reading the 'xsi:type' attribute</returns>
-        public static Element ToFhirElementBasedOnType(this XElement self)
+        public static Element ToFhirElementBasedOnType(this XElement self, params string[] expectedTypes)
         {
             if (self == null)
                 throw new ArgumentNullException(nameof(self));
@@ -546,10 +549,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             var type = self.Attribute(Defaults.XsiNs + "type")?.Value?.ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(type))
-            {
-                throw new InvalidOperationException(
-                    $"A type could not be determined for the element with multiple possible types: {self}");
-            }
+                throw new RequiredValueNotFoundException(self, "[@type]");
+
+            if (expectedTypes.Any() && !expectedTypes.Select(x => x.ToLowerInvariant()).Contains(type))
+                throw new UnexpectedFhirTypeException(self, type);
 
             switch (type)
             {
@@ -568,9 +571,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     // Point in time -> DateTime or Period element
                     return self.ToDateTimeElement();
                 default:
-                    throw new InvalidOperationException(
-                        $"The type '{type}' is not recognized and cannot be converted to its FHIR represented " +
-                        $"type");
+                    throw new UnrecognizedValueException(
+                        self,
+                        type,
+                        elementAttributeName: "type");
             }
         }
 
