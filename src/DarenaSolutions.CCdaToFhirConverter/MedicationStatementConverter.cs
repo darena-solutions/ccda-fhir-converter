@@ -7,7 +7,6 @@ using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
-using Hl7.Fhir.Utility;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
@@ -28,9 +27,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <inheritdoc />
         protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
-            throw new InvalidOperationException(
-                "This converter is not intended to be used as a standalone converter. Medication statement elements must " +
-                "be determined before using this converter. This converter itself cannot determine medication statement resources");
+            var xPath = "//n1:section/n1:code[@code='10160-0']/../n1:entry/n1:substanceAdministration";
+            return cCda.XPathSelectElements(xPath, namespaceManager);
         }
 
         /// <inheritdoc />
@@ -74,6 +72,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .First();
 
                 medicationStatement.Medication = new ResourceReference($"urn:uuid:{medication.Id}");
+            }
+
+            var authorEl = element.Element(Defaults.DefaultNs + "author");
+            if (authorEl != null)
+            {
+                var provenanceConverter = new ProvenanceConverter(PatientId);
+                var provenance = provenanceConverter
+                    .AddToBundle(bundle, new List<XElement> { authorEl }, namespaceManager, cacheManager)
+                    .GetFirstResourceAsType<Provenance>();
+
+                provenance.Target.Add(new ResourceReference($"urn:uuid:{id}"));
             }
 
             return medicationStatement;

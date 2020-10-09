@@ -95,9 +95,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         }
                     }
                 },
-                Who = new ResourceReference($"urn:uuid:{practitioners[0].Id}"),
-                OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganization.Id}")
+                Who = new ResourceReference($"urn:uuid:{practitioners[0].Id}")
             };
+
+            if (representedOrganization != null)
+                agent.OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganization.Id}");
 
             provenance.Agent.Add(agent);
 
