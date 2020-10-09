@@ -5,6 +5,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -55,7 +56,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
             if (string.IsNullOrWhiteSpace(textEl))
-                throw new InvalidOperationException($"Could not find any text for the referral in: {element}");
+                throw new RequiredValueNotFoundException(element, "text");
 
             carePlan.Text = new Narrative
             {

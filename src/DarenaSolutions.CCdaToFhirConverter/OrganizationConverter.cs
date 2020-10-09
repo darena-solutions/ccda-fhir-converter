@@ -3,6 +3,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -37,7 +38,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             if (string.IsNullOrWhiteSpace(organization.Name))
-                throw new InvalidOperationException($"No organization name was found in: {element}");
+                throw new RequiredValueNotFoundException(element, "name");
 
             organization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-organization"));
 
@@ -63,7 +64,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var address = addressElement.ToAddress();
                 if (address.LineElement.Count > 4)
-                    throw new InvalidOperationException($"More than 4 address lines were provided in: {addressElement}");
+                    throw new ProfileRelatedException(addressElement, "More than 4 address lines were provided", "streetAddressLine");
 
                 organization.Address.Add(address);
             }

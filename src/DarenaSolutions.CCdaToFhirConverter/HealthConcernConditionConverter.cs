@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -41,24 +40,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
 
             // Get the value from the observation element
-            var xPath = "../../n1:entry/n1:observation";
-            var observationEl = element.XPathSelectElement(xPath, namespaceManager);
+            var xPath = "../../n1:entry/n1:observation/n1:value";
+            var valueEl = element
+                .XPathSelectElement(xPath, namespaceManager)?
+                .ToFhirElementBasedOnType("co", "cd");
 
-            if (observationEl == null)
-                throw new InvalidOperationException($"A condition code was not found for the health concern: {element}");
+            if (valueEl == null)
+                throw new RequiredValueNotFoundException(element, "../../entry/observation/value");
 
-            var valueEl = observationEl
-                .Element(Defaults.DefaultNs + "value")?
-                .ToFhirElementBasedOnType();
-
-            if (!(valueEl is CodeableConcept codeableConcept))
-            {
-                throw new InvalidOperationException(
-                    $"Expected the condition code for the health concern to be a codeable concept, however " +
-                    $"the value type is not recognized: {observationEl}");
-            }
-
-            condition.Code = codeableConcept;
+            condition.Code = (CodeableConcept)valueEl;
             condition.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/condition-category",
                 "health-concern",

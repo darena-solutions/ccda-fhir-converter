@@ -4,6 +4,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -47,7 +48,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
             if (string.IsNullOrWhiteSpace(textEl))
-                throw new InvalidOperationException($"Could not find any text for the clinical impression in: {element}");
+                throw new RequiredValueNotFoundException(element, "text");
 
             clinicalImpression.Note.Add(new Annotation
             {

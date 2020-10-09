@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -48,6 +49,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             medication.Code = element
                 .Element(Defaults.DefaultNs + "code")?
                 .ToCodeableConcept();
+
+            if (medication.Code == null)
+                throw new RequiredValueNotFoundException(element, "code");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

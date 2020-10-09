@@ -4,6 +4,7 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -59,7 +60,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             if (!practitioner.Identifier.Any())
-                throw new InvalidOperationException($"No practitioner identifiers were found in: {element}");
+                throw new RequiredValueNotFoundException(element, "id");
 
             var nameElements = element
                 .Element(Defaults.DefaultNs + "assignedPerson")?
@@ -67,13 +68,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToList();
 
             if (nameElements == null || !nameElements.Any())
-                throw new InvalidOperationException($"Could not find any practitioner names in: {element}");
+                throw new RequiredValueNotFoundException(element, "assignedPerson/name");
 
             foreach (var nameElement in nameElements)
             {
                 var humanName = nameElement.ToHumanName();
                 if (string.IsNullOrWhiteSpace(humanName.Family))
-                    throw new InvalidOperationException($"No practitioner family name was found in: {nameElement}");
+                    throw new RequiredValueNotFoundException(nameElement, "family");
 
                 practitioner.Name.Add(humanName);
             }

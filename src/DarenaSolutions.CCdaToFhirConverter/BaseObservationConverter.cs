@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -65,7 +66,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToCodeableConcept();
 
             if (observation.Code == null)
-                throw new InvalidOperationException($"Could not find code in: {element}");
+                throw new RequiredValueNotFoundException(element, "code");
 
             observation.Effective = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?
