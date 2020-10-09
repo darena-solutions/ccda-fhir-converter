@@ -4,6 +4,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -67,6 +68,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Element(Defaults.DefaultNs + "effectiveTime")?
                 .ToFhirDateTime();
 
+            if (immunization.Occurrence == null)
+                throw new RequiredValueNotFoundException(element, "effectiveTime");
+
             var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
             var manufacturedMaterialEl = element.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
             if (manufacturedMaterialEl != null)
@@ -79,6 +83,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .Element(Defaults.DefaultNs + "lotNumberText")?
                     .GetFirstTextNode();
             }
+
+            if (immunization.VaccineCode == null)
+                throw new RequiredValueNotFoundException(element, "consumable/manufacturedProduct/manufacturedMaterial/code");
 
             var statusReasonCodeXPath = "n1:entryRelationship/n1:observation/n1:code";
             immunization.StatusReason = element

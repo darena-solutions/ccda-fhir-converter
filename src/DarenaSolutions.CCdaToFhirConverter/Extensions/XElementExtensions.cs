@@ -5,6 +5,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter.Extensions
@@ -48,7 +49,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 if (!string.IsNullOrWhiteSpace(nullFlavorValue))
                 {
                     if (!nullFlavorValue.IsValidNullFlavorValue())
-                        throw new InvalidOperationException($"The null flavor value '{nullFlavorValue}' is not recognized");
+                        throw new UnrecognizedValueException(self, nullFlavorValue, elementAttributeName: "nullFlavor");
 
                     coding.CodeElement = new Code
                     {
@@ -103,7 +104,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case null:
                     break;
                 default:
-                    throw new InvalidOperationException($"Could not determine address use from value '{useValue}'");
+                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use");
             }
 
             return address;
@@ -131,7 +132,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     use = null;
                     break;
                 default:
-                    throw new InvalidOperationException($"Could not determine name use from value '{useValue}'");
+                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use");
             }
 
             var name = new HumanName
@@ -170,7 +171,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             var value = self.Attribute("value")?.Value;
             if (string.IsNullOrWhiteSpace(value))
-                throw new InvalidOperationException($"No contact point value was found in: {self}");
+                throw new RequiredValueNotFoundException(self, "[@value]");
 
             ContactPoint.ContactPointUse? contactPointUse;
             var use = self.Attribute("use")?.Value;
@@ -197,7 +198,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     contactPointUse = null;
                     break;
                 default:
-                    throw new InvalidOperationException($"Could not determine contact point use from value '{use}'");
+                    throw new UnrecognizedValueException(self, use, elementAttributeName: "use");
             }
 
             ContactPoint.ContactPointSystem system;
@@ -235,11 +236,11 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             var systemValue = self.Attribute("root")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(systemValue))
-                throw new InvalidOperationException($"Could not determine identifier system value from element: {self}");
+                throw new RequiredValueNotFoundException(self, "[@root]");
 
             var codeValue = self.Attribute("extension")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(codeValue))
-                throw new InvalidOperationException($"Could not determine identifier code value from element: {self}");
+                throw new RequiredValueNotFoundException(self, "[@extension]");
 
             var identifier = new Identifier(ConvertKnownSystemOid(systemValue), codeValue);
 
@@ -402,40 +403,6 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         }
 
         /// <summary>
-        /// This will return a reference range for a laboratory result observation.
-        /// </summary>
-        /// <param name="self">The source element</param>
-        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the list of elements</param>
-        /// <returns>The FHIR <see cref="Observation.ReferenceRangeComponent"/> representation of the source element</returns>
-        public static Observation.ReferenceRangeComponent ToObservationReferenceRange(
-            this XElement self,
-            XmlNamespaceManager namespaceManager)
-        {
-            var referenceRangeLowXPath = "n1:referenceRange/n1:observationRange/n1:value/n1:low";
-            var referenceRangeLowElement = self.XPathSelectElement(referenceRangeLowXPath, namespaceManager);
-            Observation.ReferenceRangeComponent referenceRangeComponent = null;
-
-            if (referenceRangeLowElement != null)
-            {
-                referenceRangeComponent = new Observation.ReferenceRangeComponent();
-                referenceRangeComponent.Low = referenceRangeLowElement.ToSimpleQuantity();
-            }
-
-            var referenceRangeHighXPath = "n1:referenceRange/n1:observationRange/n1:value/n1:high";
-            var referenceRangeHighElement = self.XPathSelectElement(referenceRangeHighXPath, namespaceManager);
-
-            if (referenceRangeHighElement != null)
-            {
-                if (referenceRangeComponent == null)
-                    referenceRangeComponent = new Observation.ReferenceRangeComponent();
-
-                referenceRangeComponent.High = referenceRangeHighElement.ToSimpleQuantity();
-            }
-
-            return referenceRangeComponent;
-        }
-
-        /// <summary>
         /// Converts an element into its FHIR <see cref="SimpleQuantity" /> representation
         /// </summary>
         /// <param name="self">The source element</param>
@@ -445,7 +412,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             var value = self.Attribute("value")?.Value;
 
             if (!decimal.TryParse(value, out var dValue))
-                throw new InvalidOperationException($"The quantity value could not be parsed into a decimal in: {self}");
+                throw new UnrecognizedValueException(self, value, elementAttributeName: "value");
 
             return new SimpleQuantity { Value = dValue, Unit = self.Attribute("unit")?.Value };
         }
@@ -535,8 +502,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// extension
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="expectedTypes">Provide a list of expected types. If a list is provided and the type that is read
+        /// does not exist in this list, an exception will be thrown</param>
         /// <returns>The FHIR representation of the source element, based on reading the 'xsi:type' attribute</returns>
-        public static Element ToFhirElementBasedOnType(this XElement self)
+        public static Element ToFhirElementBasedOnType(this XElement self, params string[] expectedTypes)
         {
             if (self == null)
                 throw new ArgumentNullException(nameof(self));
@@ -546,10 +515,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             var type = self.Attribute(Defaults.XsiNs + "type")?.Value?.ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(type))
-            {
-                throw new InvalidOperationException(
-                    $"A type could not be determined for the element with multiple possible types: {self}");
-            }
+                throw new RequiredValueNotFoundException(self, "[@type]");
+
+            if (expectedTypes.Any() && !expectedTypes.Select(x => x.ToLowerInvariant()).Contains(type))
+                throw new UnexpectedValueTypeException(self, type);
 
             switch (type)
             {
@@ -568,10 +537,51 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     // Point in time -> DateTime or Period element
                     return self.ToDateTimeElement();
                 default:
-                    throw new InvalidOperationException(
-                        $"The type '{type}' is not recognized and cannot be converted to its FHIR represented " +
-                        $"type");
+                    throw new UnrecognizedValueException(self, type, elementAttributeName: "type");
             }
+        }
+
+        /// <summary>
+        /// Gets the absolute path of the element
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>The absolute path of this element</returns>
+        public static string GetAbsolutePath(this XElement self)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            return BuildAbsolutePath(self, new Stack<string>());
+        }
+
+        private static string BuildAbsolutePath(XElement element, Stack<string> path)
+        {
+            var name = element.Name.LocalName;
+            var parent = element.Parent;
+
+            if (parent != null)
+            {
+                var i = -1;
+                var childElements = parent
+                    .Elements()
+                    .Where(x => x.Name.LocalName == element.Name.LocalName)
+                    .ToList();
+
+                foreach (var childElement in childElements)
+                {
+                    i++;
+                    if (childElement == element)
+                        break;
+                }
+
+                if (childElements.Count > 1)
+                    name += $"[{i}]";
+            }
+
+            path.Push(name);
+            return parent == null
+                ? $"/{string.Join("/", path)}"
+                : BuildAbsolutePath(parent, path);
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -46,7 +47,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToCodeableConcept();
 
             if (condition.Code == null)
-                throw new InvalidOperationException($"A condition code was not found in: {element}");
+                throw new RequiredValueNotFoundException(element, "value");
 
             condition.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/condition-category",
