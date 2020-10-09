@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -56,14 +57,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Value;
 
             if (string.IsNullOrWhiteSpace(dateRecordedValue))
-                throw new InvalidOperationException($"Could not find an authored time in: {element}");
+                throw new RequiredValueNotFoundException(element, "time[@value]");
 
             provenance.Recorded = dateRecordedValue.ParseCCdaDateTimeOffset();
 
             // Agent
             var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
             if (assignedAuthorElement == null)
-                throw new InvalidOperationException($"Could not find an assigned author in: {element}");
+                throw new RequiredValueNotFoundException(element, "assignedAuthor");
 
             var practitionerConverter = new PractitionerConverter(PatientId);
             var practitioners = practitionerConverter.AddToBundle(
@@ -83,11 +84,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var agent = new Provenance.AgentComponent
             {
-                Type = new CodeableConcept()
+                Type = new CodeableConcept
                 {
-                    Coding = new List<Coding>()
+                    Coding = new List<Coding>
                     {
-                        new Coding()
+                        new Coding
                         {
                             System =
                                 "http://terminology.hl7.org/CodeSystem/provenance-participant-type",
