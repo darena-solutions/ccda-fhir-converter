@@ -236,11 +236,11 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             var systemValue = self.Attribute("root")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(systemValue))
-                throw new InvalidOperationException($"Could not determine identifier system value from element: {self}");
+                throw new RequiredValueNotFoundException(self, "[@root]");
 
             var codeValue = self.Attribute("extension")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(codeValue))
-                throw new InvalidOperationException($"Could not determine identifier code value from element: {self}");
+                throw new RequiredValueNotFoundException(self, "[@extension]");
 
             var identifier = new Identifier(ConvertKnownSystemOid(systemValue), codeValue);
 
