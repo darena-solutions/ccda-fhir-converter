@@ -27,7 +27,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
             var xPath =
-                "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.22.1']/.." +
+                "//n1:section/n1:code[@code='46240-8']/.." +
                 "/n1:entry/n1:encounter/n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation";
 
             return cCda.XPathSelectElements(xPath, namespaceManager);
@@ -42,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         {
             var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             condition.Code = element
-                .FindCodeElementWithTranslation()?
+                .FindCodeElementWithTranslation(codeElementName: "value")?
                 .ToCodeableConcept();
 
             if (condition.Code == null)
