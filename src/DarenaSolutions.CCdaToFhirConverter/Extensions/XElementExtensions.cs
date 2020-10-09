@@ -584,10 +584,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             if (self == null)
                 throw new ArgumentNullException(nameof(self));
 
-            return BuildAbsolutePath(self, new Queue<string>());
+            return BuildAbsolutePath(self, new Stack<string>());
         }
 
-        private static string BuildAbsolutePath(XElement element, Queue<string> path)
+        private static string BuildAbsolutePath(XElement element, Stack<string> path)
         {
             var name = element.Name.LocalName;
             var parent = element.Parent;
@@ -595,20 +595,25 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             if (parent != null)
             {
                 var i = -1;
-                foreach (var childElement in parent.Elements())
+                var childElements = parent
+                    .Elements()
+                    .Where(x => x.Name.LocalName == element.Name.LocalName)
+                    .ToList();
+
+                foreach (var childElement in childElements)
                 {
                     i++;
                     if (childElement == element)
                         break;
                 }
 
-                if (i != 0)
+                if (childElements.Count > 1)
                     name += $"[{i}]";
             }
 
-            path.Enqueue(name);
+            path.Push(name);
             return parent == null
-                ? string.Join("/", path)
+                ? $"/{string.Join("/", path)}"
                 : BuildAbsolutePath(parent, path);
         }
     }

@@ -43,7 +43,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
 
             var fullPath = parent.GetAbsolutePath();
             if (!string.IsNullOrWhiteSpace(xPathToRequired))
-                fullPath += fullPath.StartsWith("/") ? xPathToRequired : $"/{xPathToRequired}";
+                fullPath += xPathToRequired.StartsWith("/") ? xPathToRequired : $"/{xPathToRequired}";
 
             return $"Required value at path '{fullPath}' could not be found";
         }
