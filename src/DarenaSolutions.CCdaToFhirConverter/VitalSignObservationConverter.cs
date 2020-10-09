@@ -3,6 +3,7 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -38,6 +39,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
+
+            if (observation.Effective == null)
+                throw new RequiredValueNotFoundException(element, "effectiveTime");
 
             observation
                 .Category

@@ -7,15 +7,15 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
     /// <summary>
     /// An exception that is thrown when a 'value' element is expected to be a certain type, but is not the expected type
     /// </summary>
-    public class UnexpectedFhirTypeException : Exception
+    public class UnexpectedValueTypeException : Exception
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="UnexpectedFhirTypeException"/> class
+        /// Initializes a new instance of the <see cref="UnexpectedValueTypeException"/> class
         /// </summary>
         /// <param name="element">The 'value' element</param>
         /// <param name="unexpectedType">The unexpected type</param>
         /// <param name="message">Optionally specify a custom error message if the default error message is not desired</param>
-        public UnexpectedFhirTypeException(
+        public UnexpectedValueTypeException(
             XElement element,
             string unexpectedType,
             string message = null)

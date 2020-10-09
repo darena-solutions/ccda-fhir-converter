@@ -552,7 +552,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 throw new RequiredValueNotFoundException(self, "[@type]");
 
             if (expectedTypes.Any() && !expectedTypes.Select(x => x.ToLowerInvariant()).Contains(type))
-                throw new UnexpectedFhirTypeException(self, type);
+                throw new UnexpectedValueTypeException(self, type);
 
             switch (type)
             {

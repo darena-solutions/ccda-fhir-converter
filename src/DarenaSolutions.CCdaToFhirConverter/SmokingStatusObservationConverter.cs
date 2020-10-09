@@ -4,6 +4,8 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -40,6 +42,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-smokingstatus"));
 
+            if (observation.Value == null)
+                throw new RequiredValueNotFoundException(element, "value");
+
+            var valueEl = element.Element(Defaults.DefaultNs + "value");
+            if (!(observation.Value is CodeableConcept))
+                throw new UnexpectedValueTypeException(valueEl, valueEl.Attribute(Defaults.XsiNs + "type").Value);
+
             observation
                 .Category
                 .First()
@@ -47,16 +56,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .First()
                 .Code = "social-history";
 
-            if (!(observation.Effective is FhirDateTime dateTimeElement))
-            {
-                throw new InvalidOperationException(
-                    $"Expected the issued datetime to be a datetime, however, the issued value is of type " +
-                    $"{observation.Effective.GetType().Name}");
-            }
+            if (observation.Effective == null)
+                throw new RequiredValueNotFoundException(element, "effectiveTime");
+
+            if (observation.Effective is FhirDateTime dateTimeElement)
+                observation.Issued = dateTimeElement.ToDateTimeOffset(TimeSpan.Zero);
+            else if (observation.Effective is Period periodElement)
+                observation.Issued = periodElement.StartElement.ToDateTimeOffset(TimeSpan.Zero);
 
             observation.Effective = null;
-            observation.Issued = dateTimeElement.ToDateTimeOffset(TimeSpan.Zero);
-
             return observation;
         }
     }
