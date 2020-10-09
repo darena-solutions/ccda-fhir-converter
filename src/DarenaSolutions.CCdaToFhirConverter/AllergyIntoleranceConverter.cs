@@ -5,6 +5,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Utility;
@@ -89,7 +90,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         case "active":
                             break;
                         default:
-                            throw new InvalidOperationException($"The clinical status code '{clinicalStatus.Coding[0].Code}' is invalid");
+                            throw new UnrecognizedValueException(
+                                statusCodeElement,
+                                clinicalStatus.Coding[0].Code,
+                                elementAttributeName: "code");
                     }
                 }
 
@@ -105,14 +109,19 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .ToCodeableConcept();
 
                 if (substanceCodeableConcept == null)
-                    throw new InvalidOperationException($"No substance element was found in: {element}");
+                    throw new RequiredValueNotFoundException(element, "participant/participantRole/playingEntity/code");
 
                 allergyIntolerance.Code = substanceCodeableConcept;
 
-                var reaction = new AllergyIntolerance.ReactionComponent();
-                var obsEntryRelationships = element.Elements(Defaults.DefaultNs + "entryRelationship");
+                AllergyIntolerance.ReactionComponent reaction = null;
+                var obsEntryRelationships = element
+                    .Elements(Defaults.DefaultNs + "entryRelationship")
+                    .ToList();
+
                 foreach (var obsEntryRelationship in obsEntryRelationships)
                 {
+                    reaction ??= new AllergyIntolerance.ReactionComponent();
+
                     var templateIdValue = obsEntryRelationship
                         .Element(Defaults.DefaultNs + "observation")?
                         .Element(Defaults.DefaultNs + "templateId")?
@@ -129,10 +138,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                     "value")?
                                 .ToCodeableConcept();
 
-                            if (manifestationCodeableConcept == null && reaction.Manifestation.Count == 0)
-                                throw new InvalidOperationException($"No manifestation element was found in: {obsEntryRelationship}");
-
-                            reaction.Manifestation.Add(manifestationCodeableConcept);
+                            if (manifestationCodeableConcept != null)
+                                reaction.Manifestation.Add(manifestationCodeableConcept);
                             break;
                         case "2.16.840.1.113883.10.20.22.4.8":
                             var severityCodeableConcept = obsEntryRelationship
@@ -143,21 +150,27 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                 .ToCodeableConcept();
 
                             if (severityCodeableConcept == null)
-                                throw new InvalidOperationException($"No severity element found in: {obsEntryRelationship}");
+                                continue;
 
                             var severityDisplay = severityCodeableConcept.Coding.First().Display;
-                            var severity = EnumUtility.ParseLiteral<AllergyIntolerance.AllergyIntoleranceSeverity>(severityDisplay, true);
-                            if (severity == null)
-                                throw new InvalidOperationException($"Could not determine allergy intolerance severity from value '{severityDisplay}'");
-
-                            reaction.Severity = severity;
+                            reaction.Severity = EnumUtility.ParseLiteral<AllergyIntolerance.AllergyIntoleranceSeverity>(severityDisplay, true);
                             break;
                         default:
                             continue;
                     }
                 }
 
-                allergyIntolerance.Reaction.Add(reaction);
+                if (reaction != null)
+                {
+                    if (!reaction.Manifestation.Any())
+                    {
+                        throw new RequiredValueNotFoundException(
+                            obsEntryRelationships[0].Parent,
+                            $"{obsEntryRelationships[0].Name.LocalName}[*]/observation/value");
+                    }
+
+                    allergyIntolerance.Reaction.Add(reaction);
+                }
 
                 bundle.Entry.Add(new Bundle.EntryComponent
                 {

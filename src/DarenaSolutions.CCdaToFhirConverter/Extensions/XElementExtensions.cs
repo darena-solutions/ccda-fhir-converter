@@ -573,5 +573,43 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                         $"type");
             }
         }
+
+        /// <summary>
+        /// Gets the absolute path of the element
+        /// </summary>
+        /// <param name="self">The source element</param>
+        /// <returns>The absolute path of this element</returns>
+        public static string GetAbsolutePath(this XElement self)
+        {
+            if (self == null)
+                throw new ArgumentNullException(nameof(self));
+
+            return BuildAbsolutePath(self, new Queue<string>());
+        }
+
+        private static string BuildAbsolutePath(XElement element, Queue<string> path)
+        {
+            var name = element.Name.LocalName;
+            var parent = element.Parent;
+
+            if (parent != null)
+            {
+                var i = -1;
+                foreach (var childElement in parent.Elements())
+                {
+                    i++;
+                    if (childElement == element)
+                        break;
+                }
+
+                if (i != 0)
+                    name += $"[{i}]";
+            }
+
+            path.Enqueue(name);
+            return parent == null
+                ? string.Join("/", path)
+                : BuildAbsolutePath(parent, path);
+        }
     }
 }
