@@ -50,7 +50,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .ReplaceConverter<GoalConverter>()
                     .ReplaceConverter<HealthConcernConditionConverter>()
                     .ReplaceConverter<ImmunizationConverter>()
-                    .ReplaceConverter<MedicationConverter>()
+                    .ReplaceConverter<MedicationStatementConverter>()
                     .ReplaceConverter<ProblemListConditionConverter>()
                     .ReplaceConverter<ProcedureConverter>()
                     .ReplaceConverter<ResultObservationConverter>()

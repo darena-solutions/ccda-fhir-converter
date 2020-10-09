@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -23,8 +25,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <inheritdoc />
         protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
-            var xPath = "//n1:templateId[@root='2.16.840.1.113883.10.20.22.2.1.1']/../n1:entry";
-            return cCda.XPathSelectElements(xPath, namespaceManager);
+            throw new InvalidOperationException(
+                "This converter is not intended to be used as a standalone converter. Medication elements must be " +
+                "determined before using this converter. This converter itself cannot determine medication resources");
         }
 
         /// <inheritdoc />
@@ -34,80 +37,25 @@ namespace DarenaSolutions.CCdaToFhirConverter
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
-            return null;
+            var id = Guid.NewGuid().ToString();
+            var medication = new Medication
+            {
+                Id = id,
+                Meta = new Meta()
+            };
 
-            // TODO: This needs rework
-            ////var substanceAdministrationElement = element.Element(Defaults.DefaultNs + "substanceAdministration");
-            ////if (substanceAdministrationElement == null)
-            ////    return null;
+            medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
+            medication.Code = element
+                .Element(Defaults.DefaultNs + "code")?
+                .ToCodeableConcept();
 
-            ////var medicationStatementConverter = new MedicationStatementConverter(PatientId);
-            ////var medicationStatements = medicationStatementConverter.AddToBundle(
-            ////    bundle,
-            ////    new List<XElement> { substanceAdministrationElement },
-            ////    namespaceManager,
-            ////    cacheManager);
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{id}",
+                Resource = medication
+            });
 
-            ////var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
-            ////var manufacturedMaterialElement = substanceAdministrationElement.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
-
-            ////if (manufacturedMaterialElement != null)
-            ////{
-            ////    var id = Guid.NewGuid().ToString();
-            ////    var medication = new Medication
-            ////    {
-            ////        Id = id,
-            ////        Meta = new Meta()
-            ////    };
-
-            ////    medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
-
-            ////    var codeableConcept = manufacturedMaterialElement
-            ////        .FindCodeElementWithTranslation()?
-            ////        .ToCodeableConcept();
-
-            ////    if (codeableConcept == null)
-            ////        throw new InvalidOperationException($"Could not find a medication code in: {manufacturedMaterialElement}");
-
-            ////    medication.Code = codeableConcept;
-            ////    bundle.Entry.Add(new Bundle.EntryComponent
-            ////    {
-            ////        FullUrl = $"urn:uuid:{id}",
-            ////        Resource = medication
-            ////    });
-
-            ////    Resources.Add(medication);
-            ////    medicationStatements.GetFirstResourceAsType<MedicationStatement>().Medication = new ResourceReference($"urn:uuid:{id}");
-
-            ////    var entryRelationshipElements = substanceAdministrationElement.Elements(Defaults.DefaultNs + "entryRelationship");
-            ////    foreach (var entryRelationshipElement in entryRelationshipElements)
-            ////    {
-            ////        var supplyElement = entryRelationshipElement.Element(Defaults.DefaultNs + "supply");
-            ////        if (supplyElement != null)
-            ////        {
-            ////            var medicationRequestConverter = new MedicationRequestConverter(PatientId);
-            ////            medicationRequestConverter.AddToBundle(
-            ////                bundle,
-            ////                new List<XElement> { supplyElement },
-            ////                namespaceManager,
-            ////                cacheManager);
-
-            ////            medicationRequestConverter.GetFirstResourceAsType<MedicationRequest>().Medication = new ResourceReference($"urn:uuid:{id}");
-            ////        }
-            ////    }
-            ////}
-
-            ////var representedOrganizationXPath = "n1:informant/n1:assignedEntity/n1:representedOrganization";
-            ////var representedOrganizationElement = substanceAdministrationElement.XPathSelectElement(representedOrganizationXPath, namespaceManager);
-            ////if (representedOrganizationElement != null)
-            ////{
-            ////    var representedOrganizationConverter = new OrganizationConverter();
-            ////    representedOrganizationConverter.AddToBundle(
-            ////        bundle,
-            ////        representedOrganizationElement,
-            ////        namespaceManager,
-            ////        cacheManager);
-            ////}
+            return medication;
         }
     }
 }

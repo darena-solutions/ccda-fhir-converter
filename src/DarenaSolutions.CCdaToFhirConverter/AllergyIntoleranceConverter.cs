@@ -178,7 +178,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     cacheManager);
 
                 var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
-                provenance.Target.Add(new ResourceReference($"{ResourceType.AllergyIntolerance}/{id}"));
+                provenance.Target.Add(new ResourceReference($"urn:uuid:{id}"));
             }
 
             return allergyIntolerance;
