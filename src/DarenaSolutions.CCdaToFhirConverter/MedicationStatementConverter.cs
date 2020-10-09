@@ -5,6 +5,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -64,15 +65,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var medicationXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
             var medicationEl = element.XPathSelectElement(medicationXPath, namespaceManager);
-            if (medicationEl != null)
-            {
-                var medicationConverter = new MedicationConverter(PatientId);
-                var medication = medicationConverter
-                    .AddToBundle(bundle, new List<XElement> { medicationEl }, namespaceManager, cacheManager)
-                    .First();
+            if (medicationEl == null)
+                throw new RequiredValueNotFoundException(element, "consumable/manufacturedProduct/manufacturedMaterial");
 
-                medicationStatement.Medication = new ResourceReference($"urn:uuid:{medication.Id}");
-            }
+            var medicationConverter = new MedicationConverter(PatientId);
+            var medication = medicationConverter
+                .AddToBundle(bundle, new List<XElement> { medicationEl }, namespaceManager, cacheManager)
+                .First();
+
+            medicationStatement.Medication = new ResourceReference($"urn:uuid:{medication.Id}");
 
             var authorEl = element.Element(Defaults.DefaultNs + "author");
             if (authorEl != null)
