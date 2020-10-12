@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
@@ -9,8 +9,8 @@ using Hl7.Fhir.Model;
 namespace DarenaSolutions.CCdaToFhirConverter
 {
     /// <summary>
-    /// Converter that converts various elements in the CCDA to condition FHIR resources. This converter is specifically
-    /// for encounter diagnoses sections of the CCDA
+    /// Converter that converts various elements in the CCDA to condition FHIR resources.
+    /// This converter is specifically for encounter diagnoses entries for an encounter in a CCDA
     /// </summary>
     public class EncounterDiagnosesConditionConverter : BaseConditionConverter
     {
@@ -26,11 +26,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <inheritdoc />
         protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
-            var xPath =
-                "//n1:section/n1:code[@code='46240-8']/.." +
-                "/n1:entry/n1:encounter/n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation";
-
-            return cCda.XPathSelectElements(xPath, namespaceManager);
+            throw new InvalidOperationException(
+                "This converter is not intended to be used as a standalone converter. Encounter diagnosis elements must " +
+                "be determined from the encounter resource before using this converter. This converter itself cannot determine encounter diagnosis resources");
         }
 
         /// <inheritdoc />
@@ -40,7 +38,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             XmlNamespaceManager namespaceManager,
             Dictionary<string, Resource> cache)
         {
-            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
+            var condition =
+                (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
             condition.Code = element
                 .FindCodeElementWithTranslation(codeElementName: "value")?
                 .ToCodeableConcept();
@@ -53,6 +52,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 "encounter-diagnosis",
                 "Encounter Diagnosis",
                 null));
+
+            bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{condition.Id}",
+                Resource = condition
+            });
 
             return condition;
         }

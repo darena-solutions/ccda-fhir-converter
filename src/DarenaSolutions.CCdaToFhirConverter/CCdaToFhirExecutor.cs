@@ -46,7 +46,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 ReplaceConverter<AllergyIntoleranceConverter>()
                     .ReplaceConverter<ClinicalImpressionConverter>()
                     .ReplaceConverter<DeviceConverter>()
-                    .ReplaceConverter<EncounterDiagnosesConditionConverter>()
+                    .ReplaceConverter<EncounterConverter>()
                     .ReplaceConverter<GoalConverter>()
                     .ReplaceConverter<HealthConcernConditionConverter>()
                     .ReplaceConverter<ImmunizationConverter>()
