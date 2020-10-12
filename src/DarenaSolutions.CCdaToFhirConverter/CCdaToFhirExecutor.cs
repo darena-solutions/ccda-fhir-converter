@@ -57,7 +57,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .ReplaceConverter<SmokingStatusObservationConverter>()
                     .ReplaceConverter<StatusObservationConverter>()
                     .ReplaceConverter<TextSpecificCarePlanConverter>()
-                    .ReplaceConverter<VitalSignObservationConverter>();
+                    .ReplaceConverter<VitalSignObservationConverter>()
+                    .ReplaceConverter<CareTeamConverter>();
             }
         }
 

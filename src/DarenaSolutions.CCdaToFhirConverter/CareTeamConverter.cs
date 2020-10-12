@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -22,14 +23,24 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        public override List<Resource> AddToBundle(
+            Bundle bundle,
+            XDocument cCda,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager)
         {
-            throw new NotImplementedException();
+            var elements = GetPrimaryElements(cCda, namespaceManager);
+            return AddToBundle(
+                bundle,
+                elements,
+                namespaceManager,
+                cacheManager);
         }
 
-        protected override Resource PerformElementConversion(
+        /// <inheritdoc />
+        public override List<Resource> AddToBundle(
             Bundle bundle,
-            XElement element,
+            IEnumerable<XElement> elements,
             XmlNamespaceManager namespaceManager,
             ConvertedCacheManager cacheManager)
         {
@@ -42,6 +53,70 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             careTeam.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-careteam"));
+
+            foreach (var element in elements)
+            {
+                var practitioner = PerformElementConversion(
+                    bundle,
+                    element,
+                    namespaceManager,
+                    cacheManager);
+
+                careTeam.Participant.Add(new CareTeam.ParticipantComponent
+                {
+                    Member = new ResourceReference($"urn:uuid:{practitioner.Id}")
+                });
+            }
+
+            return new List<Resource> { careTeam };
+        }
+
+        /// <inheritdoc />
+        protected override IEnumerable<XElement> GetPrimaryElements(XDocument cCda, XmlNamespaceManager namespaceManager)
+        {
+            var elements = cCda.XPathSelectElements(
+                "n1:ClinicalDocument/n1:documentationOf/n1:serviceEvent/n1:performer/n1:assignedEntity",
+                namespaceManager);
+
+            elements = elements.Concat(cCda.XPathSelectElements(
+                "n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:responsibleParty/n1:assignedEntity",
+                namespaceManager));
+
+            elements = elements.Concat(cCda.XPathSelectElements(
+                "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:assignedPerson/..",
+                namespaceManager));
+
+            elements = elements.Concat(cCda.XPathSelectElements(
+                "n1:ClinicalDocument/n1:legalAuthenticator/n1:assignedEntity/n1:assignedPerson/..",
+                namespaceManager));
+
+            elements = elements.Concat(cCda.XPathSelectElements(
+                "n1:ClinicalDocuments/n1:authenticator/n1:assignedEntity/n1:assignedPerson/..",
+                namespaceManager));
+
+            elements = elements.Concat(cCda.XPathSelectElements(
+                "n1:ClinicalDocument/n1:informationRecipient/n1:intendedRecipient/n1:informationRecipient/..",
+                namespaceManager));
+
+            elements = elements.Concat(cCda.XPathSelectElements(
+                "n1:ClinicalDocument/n1:participant/n1:associatedEntity/n1:associatedPerson/..",
+                namespaceManager));
+
+            var t = elements.ToList();
+            return elements;
+        }
+
+        /// <inheritdoc />
+        protected override Resource PerformElementConversion(
+            Bundle bundle,
+            XElement element,
+            XmlNamespaceManager namespaceManager,
+            ConvertedCacheManager cacheManager)
+        {
+            var practitionerConverter = new PractitionerConverter(PatientId);
+            return practitionerConverter
+                .AddToBundle(bundle, new List<XElement> { element }, namespaceManager, cacheManager)
+                .First();
         }
     }
 }
