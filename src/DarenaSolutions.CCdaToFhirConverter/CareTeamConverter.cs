@@ -102,7 +102,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 "n1:ClinicalDocument/n1:participant/n1:associatedEntity/n1:associatedPerson/..",
                 namespaceManager));
 
-            var t = elements.ToList();
             return elements;
         }
 
