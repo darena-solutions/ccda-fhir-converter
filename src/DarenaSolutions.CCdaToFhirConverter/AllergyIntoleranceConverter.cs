@@ -38,7 +38,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var allergyIntolerance = new AllergyIntolerance
@@ -188,7 +188,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     bundle,
                     new List<XElement> { authorElement },
                     namespaceManager,
-                    cacheManager);
+                    cache);
 
                 var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
                 provenance.Target.Add(new ResourceReference($"urn:uuid:{id}"));

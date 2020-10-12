@@ -29,7 +29,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var patient = new Patient

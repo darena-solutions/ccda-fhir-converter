@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -26,7 +27,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var condition = new Condition
@@ -52,11 +53,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             foreach (var identifierElement in identifierElements)
             {
                 var identifier = identifierElement.ToIdentifier();
-                if (cacheManager.TryGetResource(ResourceType.Condition, identifier.System, identifier.Value, out var resource))
+                var cacheKey = $"{ResourceType.Condition}|{identifier.System}|{identifier.Value}";
+                if (cache.TryGetValue(cacheKey, out var resource))
                     return resource;
 
                 condition.Identifier.Add(identifier);
-                cacheManager.Add(condition, identifier.System, identifier.Value);
+                cache.Add(cacheKey, condition);
             }
 
             condition.Onset = element

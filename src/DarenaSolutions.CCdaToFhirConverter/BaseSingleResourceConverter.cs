@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System.Collections.Generic;
+using System.Xml;
 using System.Xml.Linq;
 using Hl7.Fhir.Model;
 
@@ -14,7 +15,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XDocument cCda,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var element = GetPrimaryElement(cCda, namespaceManager);
             if (element == null)
@@ -24,7 +25,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 bundle,
                 element,
                 namespaceManager,
-                cacheManager);
+                cache);
         }
 
         /// <inheritdoc />
@@ -32,7 +33,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             if (element == null)
                 return null;
@@ -41,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 bundle,
                 element,
                 namespaceManager,
-                cacheManager);
+                cache);
         }
 
         /// <summary>
@@ -58,13 +59,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <param name="bundle">The bundle to add the converted resource to as an entry</param>
         /// <param name="element">The element to convert</param>
         /// <param name="namespaceManager">A namespace manager that can be used to further navigate the element</param>
-        /// <param name="cacheManager">A cache manager that can be used to determine if a particular resource has already
-        /// been converted and added to the bundle. It is up to each implementation to add entries to this cache.</param>
+        /// <param name="cache">A cache that can be used to determine if a particular resource has already been converted
+        /// and added to the bundle. It is up to each implementation to add entries to this cache.</param>
         /// <returns>The resource that was converted and added to the bundle</returns>
         protected abstract Resource PerformElementConversion(
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager);
+            Dictionary<string, Resource> cache);
     }
 }

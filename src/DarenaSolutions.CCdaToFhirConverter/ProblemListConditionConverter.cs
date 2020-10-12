@@ -37,9 +37,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
-            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
+            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
             condition.Code = element
                 .FindCodeElementWithTranslation(codeElementName: "value")?
                 .ToCodeableConcept();
@@ -63,7 +63,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 bundle,
                 new List<XElement> { authorElement },
                 namespaceManager,
-                cacheManager);
+                cache);
 
             var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
             provenance.Target.Add(new ResourceReference($"{ResourceType.Condition}/{condition.Id}"));

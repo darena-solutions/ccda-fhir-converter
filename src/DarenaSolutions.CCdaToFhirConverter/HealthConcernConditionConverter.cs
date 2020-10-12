@@ -35,9 +35,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
-            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
+            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
 
             // Get the value from the observation element
             var xPath = "../../n1:entry/n1:observation/n1:value";
