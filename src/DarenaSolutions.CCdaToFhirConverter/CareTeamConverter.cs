@@ -27,14 +27,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XDocument cCda,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var elements = GetPrimaryElements(cCda, namespaceManager);
             return AddToBundle(
                 bundle,
                 elements,
                 namespaceManager,
-                cacheManager);
+                cache);
         }
 
         /// <inheritdoc />
@@ -42,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             IEnumerable<XElement> elements,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var careTeam = new CareTeam
@@ -60,7 +60,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     bundle,
                     element,
                     namespaceManager,
-                    cacheManager);
+                    cache);
 
                 careTeam.Participant.Add(new CareTeam.ParticipantComponent
                 {
@@ -110,11 +110,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var practitionerConverter = new PractitionerConverter(PatientId);
             return practitionerConverter
-                .AddToBundle(bundle, new List<XElement> { element }, namespaceManager, cacheManager)
+                .AddToBundle(bundle, new List<XElement> { element }, namespaceManager, cache)
                 .First();
         }
     }

@@ -34,9 +34,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
-            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
+            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cache);
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
 

@@ -36,7 +36,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var procedure = new Procedure
@@ -86,7 +86,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     bundle,
                     new List<XElement> { participantRoleEl },
                     namespaceManager,
-                    cacheManager);
+                    cache);
             }
 
             return procedure;

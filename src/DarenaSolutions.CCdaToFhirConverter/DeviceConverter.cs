@@ -37,7 +37,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var device = new Device
@@ -74,11 +74,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (!string.IsNullOrWhiteSpace(barcodeValue))
                 {
                     udiCarrierComponent ??= new Device.UdiCarrierComponent();
-                    if (cacheManager.TryGetResource(ResourceType.Device, null, barcodeValue, out var resource))
+                    var cacheKey = $"{ResourceType.Device}|{barcodeValue}";
+                    if (cache.TryGetValue(cacheKey, out var resource))
                         return resource;
 
                     udiCarrierComponent.CarrierHRF = barcodeValue;
-                    cacheManager.Add(device, null, barcodeValue);
+                    cache.Add(cacheKey, device);
                 }
             }
 

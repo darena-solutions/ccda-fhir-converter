@@ -37,7 +37,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var practitioner = new Practitioner
@@ -52,11 +52,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             foreach (var identifierElement in identifierElements)
             {
                 var identifier = identifierElement.ToIdentifier(true);
-                if (cacheManager.TryGetResource(ResourceType.Practitioner, identifier.System, identifier.Value, out var resource))
+                var cacheKey = $"{ResourceType.Practitioner}|{identifier.System}|{identifier.Value}";
+                if (cache.TryGetValue(cacheKey, out var resource))
                     return resource;
 
                 practitioner.Identifier.Add(identifier);
-                cacheManager.Add(practitioner, identifier.System, identifier.Value);
+                cache.Add(cacheKey, practitioner);
             }
 
             if (!practitioner.Identifier.Any())

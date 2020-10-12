@@ -36,7 +36,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid();
             var provenance = new Provenance
@@ -71,7 +71,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 bundle,
                 new List<XElement> { assignedAuthorElement },
                 namespaceManager,
-                cacheManager);
+                cache);
 
             var representedOrganizationElement =
                 assignedAuthorElement.Element(Defaults.DefaultNs + "representedOrganization");
@@ -80,7 +80,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 bundle,
                 representedOrganizationElement,
                 namespaceManager,
-                cacheManager);
+                cache);
 
             var agent = new Provenance.AgentComponent
             {

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -39,9 +38,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
-            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
+            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
             condition.Code = element
                 .FindCodeElementWithTranslation(codeElementName: "value")?
                 .ToCodeableConcept();

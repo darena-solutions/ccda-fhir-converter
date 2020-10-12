@@ -103,7 +103,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (!_converterTypes.Any())
                 throw new InvalidOperationException("There are no converters in the collection");
 
-            var cacheManager = new ConvertedCacheManager();
+            var cache = new Dictionary<string, Resource>();
             var bundle = new Bundle
             {
                 Type = Bundle.BundleType.Collection,
@@ -114,7 +114,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 bundle,
                 cCda,
                 _namespaceManager,
-                cacheManager);
+                cache);
 
             if (organization?.ResourceType != ResourceType.Organization)
                 throw new InvalidOperationException("The organization converter did not produce an organization resource");
@@ -123,7 +123,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 bundle,
                 cCda,
                 _namespaceManager,
-                cacheManager);
+                cache);
 
             if (patientConverterResult?.ResourceType != ResourceType.Patient)
                 throw new InvalidOperationException("The patient converter did not produce a patient resource");
@@ -143,7 +143,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     bundle,
                     cCda,
                     _namespaceManager,
-                    cacheManager);
+                    cache);
             }
 
             return bundle;

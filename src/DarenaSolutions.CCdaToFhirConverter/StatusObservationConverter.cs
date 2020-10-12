@@ -37,9 +37,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
-            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cacheManager);
+            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cache);
             observation
                 .Category
                 .First()

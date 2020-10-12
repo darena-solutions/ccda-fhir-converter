@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -26,7 +27,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var organization = new Organization
@@ -46,11 +47,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             foreach (var identifierElement in identifierElements)
             {
                 var identifier = identifierElement.ToIdentifier();
-                if (cacheManager.TryGetResource(ResourceType.Organization, identifier.System, identifier.Value, out var resource))
+                var cacheKey = $"{ResourceType.Organization}|{identifier.System}|{identifier.Value}";
+                if (cache.TryGetValue(cacheKey, out var resource))
                     return resource;
 
                 organization.Identifier.Add(identifier);
-                cacheManager.Add(organization, identifier.System, identifier.Value);
+                cache.Add(cacheKey, organization);
             }
 
             var telecoms = element.Elements(Defaults.DefaultNs + "telecom");

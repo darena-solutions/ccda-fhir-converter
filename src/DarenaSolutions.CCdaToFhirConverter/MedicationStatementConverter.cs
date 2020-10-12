@@ -37,7 +37,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             Bundle bundle,
             XElement element,
             XmlNamespaceManager namespaceManager,
-            ConvertedCacheManager cacheManager)
+            Dictionary<string, Resource> cache)
         {
             var id = Guid.NewGuid().ToString();
             var medicationStatement = new MedicationStatement
@@ -70,7 +70,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var medicationConverter = new MedicationConverter(PatientId);
             var medication = medicationConverter
-                .AddToBundle(bundle, new List<XElement> { medicationEl }, namespaceManager, cacheManager)
+                .AddToBundle(bundle, new List<XElement> { medicationEl }, namespaceManager, cache)
                 .First();
 
             medicationStatement.Medication = new ResourceReference($"urn:uuid:{medication.Id}");
@@ -80,7 +80,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var provenanceConverter = new ProvenanceConverter(PatientId);
                 var provenance = provenanceConverter
-                    .AddToBundle(bundle, new List<XElement> { authorEl }, namespaceManager, cacheManager)
+                    .AddToBundle(bundle, new List<XElement> { authorEl }, namespaceManager, cache)
                     .GetFirstResourceAsType<Provenance>();
 
                 provenance.Target.Add(new ResourceReference($"urn:uuid:{id}"));
