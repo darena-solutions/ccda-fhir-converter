@@ -92,10 +92,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (maritalStatusElement != null)
                     patient.MaritalStatus = maritalStatusElement.ToCodeableConcept();
 
-                var religiousAffiliationElement = patientElement.Element(Defaults.DefaultNs + "religiousAffiliationCode");
-                if (religiousAffiliationElement != null)
-                    patient.Extension.Add(new Extension("http://hl7.org/fhir/StructureDefinition/us-core-religion", religiousAffiliationElement.ToCodeableConcept()));
-
                 var defaultCodeElements = new List<XElement>();
                 var stdcCodeElements = new List<XElement>();
 
