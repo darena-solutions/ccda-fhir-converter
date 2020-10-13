@@ -450,13 +450,15 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// is given</param>
         /// <param name="codeElementName">The name of the element that contains the code. The default is 'code'. This can
         /// be optionally changed to another value in situations where the element name can be something else, such as 'value'</param>
+        /// <param name="translationOnly">If true, do not consider the "code" element, if the translation element is not found</param>
         /// <returns>The translation element or the code element in a given element. The translation element takes precedence,
         /// so this is what will be returned if both translation and code elements are found</returns>
         public static XElement FindCodeElementWithTranslation(
             this XElement self,
             string initialXPath = null,
             XmlNamespaceManager namespaceManager = null,
-            string codeElementName = "code")
+            string codeElementName = "code",
+            bool translationOnly = false)
         {
             if (self == null)
                 throw new ArgumentNullException(nameof(self));
@@ -475,7 +477,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 .Element(Defaults.DefaultNs + codeElementName)?
                 .Element(Defaults.DefaultNs + "translation");
 
-            if (el == null)
+            if (el == null && !translationOnly)
                 el = initialEl?.Element(Defaults.DefaultNs + codeElementName);
 
             return el;
@@ -513,7 +515,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             if (self.Name.LocalName != "value")
                 throw new ArgumentException("Only 'value' elements can be used with this extension");
 
-            var type = self.Attribute(Defaults.XsiNs + "type")?.Value?.ToLowerInvariant();
+            var type = self.Attribute(Defaults.XsiNs + "type")?.Value.ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(type))
                 throw new RequiredValueNotFoundException(self, "[@type]");
 
