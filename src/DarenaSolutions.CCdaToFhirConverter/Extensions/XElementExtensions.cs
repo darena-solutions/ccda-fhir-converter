@@ -509,10 +509,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// extension
         /// </summary>
         /// <param name="self">The source element</param>
-        /// <param name="expectedTypes">Provide a list of expected types. If a list is provided and the type that is read
-        /// does not exist in this list, an exception will be thrown</param>
+        /// <param name="expectedTypes">Optionally provide a list of expected types. If a list is provided and the type
+        /// that is read does not exist in this list, an exception will be thrown</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in exceptions thrown by this extension method</param>
         /// <returns>The FHIR representation of the source element, based on reading the 'xsi:type' attribute</returns>
-        public static Element ToFhirElementBasedOnType(this XElement self, params string[] expectedTypes)
+        public static Element ToFhirElementBasedOnType(this XElement self, string[] expectedTypes = null, string fhirPropertyPath = null)
         {
             if (self == null)
                 throw new ArgumentNullException(nameof(self));
@@ -522,10 +524,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             var type = self.Attribute(Defaults.XsiNs + "type")?.Value.ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(type))
-                throw new RequiredValueNotFoundException(self, "[@type]");
+                throw new RequiredValueNotFoundException(self, "[@type]", fhirPropertyPath);
 
-            if (expectedTypes.Any() && !expectedTypes.Select(x => x.ToLowerInvariant()).Contains(type))
-                throw new UnexpectedValueTypeException(self, type);
+            if (expectedTypes != null && expectedTypes.Any() && !expectedTypes.Select(x => x.ToLowerInvariant()).Contains(type))
+                throw new UnexpectedValueTypeException(self, type, fhirPropertyPath);
 
             switch (type)
             {

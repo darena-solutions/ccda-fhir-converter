@@ -47,7 +47,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var valueEl = element.Element(Defaults.DefaultNs + "value");
             if (!(observation.Value is CodeableConcept))
-                throw new UnexpectedValueTypeException(valueEl, valueEl.Attribute(Defaults.XsiNs + "type").Value);
+            {
+                throw new UnexpectedValueTypeException(
+                    valueEl,
+                    valueEl.Attribute(Defaults.XsiNs + "type").Value,
+                    "Observation.value");
+            }
 
             observation
                 .Category

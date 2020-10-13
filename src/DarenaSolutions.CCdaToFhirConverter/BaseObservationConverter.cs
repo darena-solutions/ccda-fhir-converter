@@ -74,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             observation.Value = element
                 .Element(Defaults.DefaultNs + "value")?
-                .ToFhirElementBasedOnType();
+                .ToFhirElementBasedOnType(fhirPropertyPath: "Observation.value");
 
             // Commit Resource
             bundle.Entry.Add(new Bundle.EntryComponent

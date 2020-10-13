@@ -74,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             var descriptionEl = element.Element(Defaults.DefaultNs + "value");
-            var description = descriptionEl?.ToFhirElementBasedOnType("st");
+            var description = descriptionEl?.ToFhirElementBasedOnType(new[] { "st" }, "Goal.description.text");
 
             if (description == null)
                 throw new RequiredValueNotFoundException(element, "value", "Goal.description.text");

@@ -130,27 +130,27 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 switch (code)
                 {
                     case "C101669":
-                        if (valueEl.ToFhirElementBasedOnType("ts") is FhirDateTime manufactureDateTime)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.manufactureDate") is FhirDateTime manufactureDateTime)
                             device.ManufactureDateElement = manufactureDateTime;
 
                         break;
                     case "C101670":
-                        if (valueEl.ToFhirElementBasedOnType("ts") is FhirDateTime expirationDateTime)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.expirationDate") is FhirDateTime expirationDateTime)
                             device.ExpirationDateElement = expirationDateTime;
 
                         break;
                     case "C101671":
-                        if (valueEl.ToFhirElementBasedOnType("st") is FhirString serialNumber)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.serialNumber") is FhirString serialNumber)
                             device.SerialNumber = serialNumber.Value;
 
                         break;
                     case "C101672":
-                        if (valueEl.ToFhirElementBasedOnType("st") is FhirString lotNumber)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.lotNumber") is FhirString lotNumber)
                             device.LotNumber = lotNumber.Value;
 
                         break;
                     case "C113843":
-                        if (valueEl.ToFhirElementBasedOnType("st") is FhirString distinctIdentifier)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.distinctIdentifier") is FhirString distinctIdentifier)
                             device.DistinctIdentifier = distinctIdentifier.Value;
 
                         break;
