@@ -75,7 +75,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var statusCodeElement = element.Element(Defaults.DefaultNs + "statusCode");
                 if (statusCodeElement != null)
                 {
-                    clinicalStatus = statusCodeElement.ToCodeableConcept();
+                    clinicalStatus = statusCodeElement.ToCodeableConcept("AllergyIntolerance.clinicalStatus");
                     clinicalStatus.Coding[0].System = "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical";
 
                     switch (clinicalStatus.Coding[0].Code)
@@ -93,7 +93,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                             throw new UnrecognizedValueException(
                                 statusCodeElement,
                                 clinicalStatus.Coding[0].Code,
-                                elementAttributeName: "code");
+                                elementAttributeName: "code",
+                                fhirPropertyPath: "AllergyIntolerance.clinicalStatus.coding.code");
                     }
                 }
 
@@ -106,10 +107,15 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 var substanceCodeableConcept = element
                     .FindCodeElementWithTranslation("n1:participant/n1:participantRole/n1:playingEntity", namespaceManager)?
-                    .ToCodeableConcept();
+                    .ToCodeableConcept("AllergyIntolerance.code");
 
                 if (substanceCodeableConcept == null)
-                    throw new RequiredValueNotFoundException(element, "participant/participantRole/playingEntity/code");
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "participant/participantRole/playingEntity/code",
+                        "AllergyIntolerance.code");
+                }
 
                 allergyIntolerance.Code = substanceCodeableConcept;
 
@@ -136,7 +142,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                     "n1:observation",
                                     namespaceManager,
                                     "value")?
-                                .ToCodeableConcept();
+                                .ToCodeableConcept("AllergyIntolerance.reaction.manifestation");
 
                             if (manifestationCodeableConcept != null)
                                 reaction.Manifestation.Add(manifestationCodeableConcept);
@@ -147,7 +153,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                     "n1:observation",
                                     namespaceManager,
                                     "value")?
-                                .ToCodeableConcept();
+                                .ToCodeableConcept("AllergyIntolerance.reaction.severity");
 
                             if (severityCodeableConcept == null)
                                 continue;
@@ -166,7 +172,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     {
                         throw new RequiredValueNotFoundException(
                             obsEntryRelationships[0].Parent,
-                            $"{obsEntryRelationships[0].Name.LocalName}[*]/observation/value");
+                            $"{obsEntryRelationships[0].Name.LocalName}[*]/observation/value",
+                            "AllergyIntolerance.reaction");
                     }
 
                     allergyIntolerance.Reaction.Add(reaction);

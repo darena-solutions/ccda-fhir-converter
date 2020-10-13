@@ -6,6 +6,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Utility;
@@ -43,20 +44,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                patient.Identifier.Add(identifierElement.ToIdentifier(true));
+                patient.Identifier.Add(identifierElement.ToIdentifier(true, "Patient.identifier"));
             }
 
             if (!patient.Identifier.Any())
-                throw new InvalidOperationException($"No patient identifiers were found in: {element}");
+                throw new RequiredValueNotFoundException(element, "id", "Patient.identifier");
 
             var addressElement = element.Element(Defaults.DefaultNs + "addr");
             if (addressElement != null)
-                patient.Address.Add(addressElement.ToAddress());
+                patient.Address.Add(addressElement.ToAddress("Patient.address"));
 
             var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecomElement in telecomElements)
             {
-                patient.Telecom.Add(telecomElement.ToContactPoint());
+                patient.Telecom.Add(telecomElement.ToContactPoint("Patient.telecom"));
             }
 
             var patientElement = element.Element(Defaults.DefaultNs + "patient");
@@ -65,19 +66,26 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var nameElements = patientElement.Elements(Defaults.DefaultNs + "name");
                 foreach (var nameElement in nameElements)
                 {
-                    patient.Name.Add(nameElement.ToHumanName());
+                    patient.Name.Add(nameElement.ToHumanName("Patient.name"));
                 }
 
                 if (!patient.Name.Any())
-                    throw new InvalidOperationException($"No patient names were found in: {element}");
+                    throw new RequiredValueNotFoundException(patientElement, "patient/name", "Patient.name");
 
                 var genderValue = patientElement.Element(Defaults.DefaultNs + "administrativeGenderCode")?.Attribute("displayName")?.Value;
                 if (string.IsNullOrWhiteSpace(genderValue))
-                    throw new InvalidOperationException($"No patient gender was found in: {patientElement}");
+                    throw new RequiredValueNotFoundException(patientElement, "administrativeGenderCode[@displayName]", "Patient.gender");
 
                 var administrativeGender = EnumUtility.ParseLiteral<AdministrativeGender>(genderValue, true);
                 if (administrativeGender == null)
-                    throw new InvalidOperationException($"Could not determine administrative gender from value '{genderValue}'");
+                {
+                    throw new UnrecognizedValueException(
+                        patientElement,
+                        genderValue,
+                        "administrativeGenderCode",
+                        "displayName",
+                        "Patient.gender");
+                }
 
                 patient.Gender = administrativeGender;
 
@@ -90,7 +98,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 var maritalStatusElement = patientElement.Element(Defaults.DefaultNs + "maritalStatusCode");
                 if (maritalStatusElement != null)
-                    patient.MaritalStatus = maritalStatusElement.ToCodeableConcept();
+                    patient.MaritalStatus = maritalStatusElement.ToCodeableConcept("Patient.maritalStatus");
 
                 var defaultCodeElements = new List<XElement>();
                 var stdcCodeElements = new List<XElement>();
@@ -123,7 +131,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .Element(Defaults.DefaultNs + "addr");
 
                 if (birthPlaceAddressElement != null)
-                    patient.Extension.Add(new Extension("http://hl7.org/fhir/StructureDefinition/birthPlace", birthPlaceAddressElement.ToAddress()));
+                {
+                    patient.Extension.Add(new Extension(
+                        "http://hl7.org/fhir/StructureDefinition/birthPlace",
+                        birthPlaceAddressElement.ToAddress("Patient.extension")));
+                }
 
                 var guardianElement = patientElement.Element(Defaults.DefaultNs + "guardian");
                 if (guardianElement != null)
@@ -132,19 +144,19 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     var codeElement = guardianElement.Element(Defaults.DefaultNs + "code");
                     if (codeElement != null)
-                        patient.Contact[0].Relationship.Add(codeElement.ToCodeableConcept());
+                        patient.Contact[0].Relationship.Add(codeElement.ToCodeableConcept("Patient.contact.relationship"));
 
                     var guardianAddressElement = guardianElement.Element(Defaults.DefaultNs + "addr");
                     if (guardianAddressElement != null)
-                        patient.Contact[0].Address = guardianAddressElement.ToAddress();
+                        patient.Contact[0].Address = guardianAddressElement.ToAddress("Patient.contact.address");
 
                     var guardianTelecomElement = guardianElement.Element(Defaults.DefaultNs + "telecom");
                     if (guardianTelecomElement != null)
-                        patient.Contact[0].Telecom.Add(guardianTelecomElement.ToContactPoint());
+                        patient.Contact[0].Telecom.Add(guardianTelecomElement.ToContactPoint("Patient.contact.telecom"));
 
                     var guardianNameElement = guardianElement.Element(Defaults.DefaultNs + "name");
                     if (guardianNameElement != null)
-                        patient.Contact[0].Name = guardianNameElement.ToHumanName();
+                        patient.Contact[0].Name = guardianNameElement.ToHumanName("Patient.contact.name");
                 }
 
                 var communicationElement = patientElement.Element(Defaults.DefaultNs + "languageCommunication");
@@ -154,7 +166,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 {
                     var communicationComponent = new Patient.CommunicationComponent
                     {
-                        Language = communicationCodeElement.ToCodeableConcept()
+                        Language = communicationCodeElement.ToCodeableConcept("Patient.communication.language")
                     };
 
                     communicationComponent.Language.Coding[0].System = "urn:ietf:bcp:47";
@@ -198,7 +210,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                             communicationComponent.Language.Coding[0].Display = "French";
                             break;
                         default:
-                            throw new InvalidOperationException($"Cannot recognize the language code '{communicationComponent.Language.Coding[0].Code}'");
+                            throw new UnrecognizedValueException(
+                                communicationCodeElement,
+                                communicationComponent.Language.Coding[0].Code,
+                                elementAttributeName: "code",
+                                fhirPropertyPath: "Patient.communication.language.coding.code");
                     }
 
                     var preferredValue = communicationElement
@@ -299,7 +315,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             if (isRace && ombCategoryCount > 5)
-                throw new InvalidOperationException("More than 5 omb category race codes were found");
+            {
+                throw new ProfileRelatedException(
+                    defaultCodes[0].Parent,
+                    "More than 5 omb category race codes were found",
+                    defaultCodes[0].Name.LocalName,
+                    "Patient.extension");
+            }
 
             var textExtension = new Extension { Url = "text" };
 

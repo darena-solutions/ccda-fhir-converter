@@ -48,7 +48,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
             if (string.IsNullOrWhiteSpace(textEl))
-                throw new RequiredValueNotFoundException(element, "text");
+                throw new RequiredValueNotFoundException(element, "text", "ClinicalImpression.note.text");
 
             clinicalImpression.Note.Add(new Annotation
             {
@@ -58,7 +58,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             clinicalImpression.DateElement = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToFhirDateTime();
             clinicalImpression.Code = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("ClinicalImpression.code");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

@@ -52,7 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                var identifier = identifierElement.ToIdentifier(true);
+                var identifier = identifierElement.ToIdentifier(true, "Location.identifier");
                 var cacheKey = $"{ResourceType.Location}|{identifier.System}|{identifier.Value}";
                 if (cache.TryGetValue(cacheKey, out var resource))
                     return resource;
@@ -62,7 +62,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             // Type - Code
-            var locationCode = element.ToCodeableConcept();
+            var locationCode = element.ToCodeableConcept("Location.type");
             location.Type.Add(locationCode);
 
             // Name
@@ -72,7 +72,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .FirstOrDefault();
 
             if (nameElement == null)
-                throw new RequiredValueNotFoundException(element, "location/name");
+                throw new RequiredValueNotFoundException(element, "location/name", "Location.name");
 
             location.Name = nameElement.Value;
 
@@ -80,7 +80,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var addrXPath = "n1:location/n1:addr";
             var addressElement = element.XPathSelectElements(addrXPath, namespaceManager).FirstOrDefault();
             if (addressElement != null)
-                location.Address = addressElement.ToAddress();
+                location.Address = addressElement.ToAddress("Location.address");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

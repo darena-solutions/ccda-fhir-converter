@@ -57,17 +57,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             procedure.Code = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Procedure.code");
 
             if (procedure.Code == null)
-                throw new RequiredValueNotFoundException(element, "code");
+                throw new RequiredValueNotFoundException(element, "code", "Procedure.code");
 
             procedure.Performed = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
             if (procedure.Performed == null)
-                throw new RequiredValueNotFoundException(element, "effectiveTime");
+                throw new RequiredValueNotFoundException(element, "effectiveTime", "Procedure.performed");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

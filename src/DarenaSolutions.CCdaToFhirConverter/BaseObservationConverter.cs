@@ -63,10 +63,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
             // Code
             observation.Code = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Observation.code");
 
             if (observation.Code == null)
-                throw new RequiredValueNotFoundException(element, "code");
+                throw new RequiredValueNotFoundException(element, "code", "Observation.code");
 
             observation.Effective = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?
@@ -74,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             observation.Value = element
                 .Element(Defaults.DefaultNs + "value")?
-                .ToFhirElementBasedOnType();
+                .ToFhirElementBasedOnType(fhirPropertyPath: "Observation.value");
 
             // Commit Resource
             bundle.Entry.Add(new Bundle.EntryComponent

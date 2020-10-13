@@ -43,11 +43,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-smokingstatus"));
 
             if (observation.Value == null)
-                throw new RequiredValueNotFoundException(element, "value");
+                throw new RequiredValueNotFoundException(element, "value", "Observation.value");
 
             var valueEl = element.Element(Defaults.DefaultNs + "value");
             if (!(observation.Value is CodeableConcept))
-                throw new UnexpectedValueTypeException(valueEl, valueEl.Attribute(Defaults.XsiNs + "type").Value);
+            {
+                throw new UnexpectedValueTypeException(
+                    valueEl,
+                    valueEl.Attribute(Defaults.XsiNs + "type").Value,
+                    "Observation.value");
+            }
 
             observation
                 .Category
@@ -57,7 +62,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Code = "social-history";
 
             if (observation.Effective == null)
-                throw new RequiredValueNotFoundException(element, "effectiveTime");
+                throw new RequiredValueNotFoundException(element, "effectiveTime", "Observation.effective");
 
             if (observation.Effective is FhirDateTime dateTimeElement)
                 observation.Issued = dateTimeElement.ToDateTimeOffset(TimeSpan.Zero);

@@ -41,7 +41,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
 
             if (observation.Effective == null)
-                throw new RequiredValueNotFoundException(element, "effectiveTime");
+                throw new RequiredValueNotFoundException(element, "effectiveTime", "Observation.effective");
 
             observation
                 .Category

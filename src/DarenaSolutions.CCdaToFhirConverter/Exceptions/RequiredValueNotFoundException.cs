@@ -15,15 +15,18 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
         /// </summary>
         /// <param name="parent">The parent element that should have contained the desired element</param>
         /// <param name="xPathToRequired">the XPath to the required element that was not found from the context of <paramref name="parent"/></param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property that requires the value</param>
         /// <param name="message">Optionally specify a custom error message if the default error message is not desired</param>
         public RequiredValueNotFoundException(
             XElement parent,
             string xPathToRequired,
+            string fhirPropertyPath = null,
             string message = null)
-            : base(CreateDefaultMessage(parent, xPathToRequired, message))
+            : base(CreateDefaultMessage(parent, xPathToRequired, fhirPropertyPath, message))
         {
             Parent = parent;
             XPathToRequired = xPathToRequired;
+            FhirPropertyPath = fhirPropertyPath;
         }
 
         /// <summary>
@@ -36,7 +39,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
         /// </summary>
         public string XPathToRequired { get; }
 
-        private static string CreateDefaultMessage(XElement parent, string xPathToRequired, string message)
+        /// <summary>
+        /// Gets the path to the FHIR property that required the value
+        /// </summary>
+        public string FhirPropertyPath { get; }
+
+        private static string CreateDefaultMessage(XElement parent, string xPathToRequired, string fhirPropertyPath, string message)
         {
             if (!string.IsNullOrWhiteSpace(message))
                 return message;
@@ -49,7 +57,11 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
                     : $"/{xPathToRequired}";
             }
 
-            return $"Required value at path '{fullPath}' could not be found";
+            var errorMessage = $"Required value at path '{fullPath}' could not be found";
+            if (!string.IsNullOrWhiteSpace(fhirPropertyPath))
+                errorMessage += $". Value required for FHIR property(ies): {fhirPropertyPath}";
+
+            return errorMessage;
         }
     }
 }

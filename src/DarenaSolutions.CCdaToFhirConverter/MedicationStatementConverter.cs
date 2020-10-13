@@ -66,7 +66,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var medicationXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
             var medicationEl = element.XPathSelectElement(medicationXPath, namespaceManager);
             if (medicationEl == null)
-                throw new RequiredValueNotFoundException(element, "consumable/manufacturedProduct/manufacturedMaterial");
+            {
+                throw new RequiredValueNotFoundException(
+                    element,
+                    "consumable/manufacturedProduct/manufacturedMaterial",
+                    "MedicationStatement.medication");
+            }
 
             var medicationConverter = new MedicationConverter(PatientId);
             var medication = medicationConverter

@@ -17,19 +17,23 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
         /// <param name="additionalXPath">Optionally specify if an additional xpath was applied to <paramref name="element"/>
         /// to get to the unrecognized value</param>
         /// <param name="elementAttributeName">Optionally specify if the value was read from an attribute in <paramref name="element"/></param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property that can provide additional
+        /// context to this exception</param>
         /// <param name="message">Optionally specify a custom error message if the default error message is not desired</param>
         public UnrecognizedValueException(
             XElement element,
             string unrecognizedValue,
             string additionalXPath = null,
             string elementAttributeName = null,
+            string fhirPropertyPath = null,
             string message = null)
-            : base(CreateDefaultMessage(element, unrecognizedValue, additionalXPath, elementAttributeName, message))
+            : base(CreateDefaultMessage(element, unrecognizedValue, additionalXPath, elementAttributeName, fhirPropertyPath, message))
         {
             Element = element;
             UnrecognizedValue = unrecognizedValue;
             AdditionalXPath = additionalXPath;
             ElementAttributeName = elementAttributeName;
+            FhirPropertyPath = fhirPropertyPath;
         }
 
         /// <summary>
@@ -52,11 +56,17 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
         /// </summary>
         public string ElementAttributeName { get; }
 
+        /// <summary>
+        /// Gets the path to the FHIR property that can provide additional context to this exception
+        /// </summary>
+        public string FhirPropertyPath { get; }
+
         private static string CreateDefaultMessage(
             XElement element,
             string unrecognizedValue,
             string additionalXPath,
             string elementAttributeName,
+            string fhirPropertyPath,
             string message)
         {
             if (!string.IsNullOrWhiteSpace(message))
@@ -69,7 +79,11 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
             if (!string.IsNullOrWhiteSpace(elementAttributeName))
                 fullPath += $"[@{elementAttributeName}]";
 
-            return $"The value, '{unrecognizedValue}', at path '{fullPath}' is unrecognized";
+            var errorMessage = $"The value, '{unrecognizedValue}', at path '{fullPath}' is unrecognized";
+            if (!string.IsNullOrWhiteSpace(fhirPropertyPath))
+                errorMessage += $". FHIR property context: {fhirPropertyPath}";
+
+            return errorMessage;
         }
     }
 }

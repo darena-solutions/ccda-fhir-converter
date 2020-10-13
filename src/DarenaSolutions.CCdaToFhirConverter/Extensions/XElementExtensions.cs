@@ -32,8 +32,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// Converts an element into its FHIR <see cref="CodeableConcept"/> representation
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in the <see cref="UnrecognizedValueException"/> exception</param>
         /// <returns>The FHIR <see cref="CodeableConcept"/> representation of the source element</returns>
-        public static CodeableConcept ToCodeableConcept(this XElement self)
+        public static CodeableConcept ToCodeableConcept(this XElement self, string fhirPropertyPath = null)
         {
             var codeableConcept = new CodeableConcept(
                 ConvertKnownSystemOid(self.Attribute("codeSystem")?.Value),
@@ -41,15 +43,27 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 self.Attribute("displayName")?.Value,
                 null);
 
-            var coding = codeableConcept.Coding.First();
-            if (string.IsNullOrWhiteSpace(coding.Code))
+            var coding = codeableConcept.Coding.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(coding?.Code))
             {
                 var nullFlavorValue = self.Attribute("nullFlavor")?.Value;
 
                 if (!string.IsNullOrWhiteSpace(nullFlavorValue))
                 {
                     if (!nullFlavorValue.IsValidNullFlavorValue())
-                        throw new UnrecognizedValueException(self, nullFlavorValue, elementAttributeName: "nullFlavor");
+                    {
+                        throw new UnrecognizedValueException(
+                            self,
+                            nullFlavorValue,
+                            elementAttributeName: "nullFlavor",
+                            fhirPropertyPath: fhirPropertyPath);
+                    }
+
+                    if (coding == null)
+                    {
+                        coding = new Coding();
+                        codeableConcept.Coding.Add(coding);
+                    }
 
                     coding.CodeElement = new Code
                     {
@@ -68,8 +82,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// Converts an element into its FHIR <see cref="Address"/> representation
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in the <see cref="UnrecognizedValueException"/> exception</param>
         /// <returns>The FHIR <see cref="Address"/> representation of the source element</returns>
-        public static Address ToAddress(this XElement self)
+        public static Address ToAddress(this XElement self, string fhirPropertyPath = null)
         {
             var address = new Address
             {
@@ -104,7 +120,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case null:
                     break;
                 default:
-                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use");
+                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use", fhirPropertyPath: fhirPropertyPath);
             }
 
             return address;
@@ -114,8 +130,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// Converts an element into its FHIR <see cref="HumanName"/> representation
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in the <see cref="UnrecognizedValueException"/> exception</param>
         /// <returns>The FHIR <see cref="HumanName"/> representation of the source element</returns>
-        public static HumanName ToHumanName(this XElement self)
+        public static HumanName ToHumanName(this XElement self, string fhirPropertyPath = null)
         {
             HumanName.NameUse? use;
             var useValue = self.Attribute("use")?.Value;
@@ -132,7 +150,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     use = null;
                     break;
                 default:
-                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use");
+                    throw new UnrecognizedValueException(self, useValue, elementAttributeName: "use", fhirPropertyPath: fhirPropertyPath);
             }
 
             var name = new HumanName
@@ -166,12 +184,14 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// Converts an element into its FHIR <see cref="ContactPoint"/> representation
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in the <see cref="RequiredValueNotFoundException"/> exception</param>
         /// <returns>The FHIR <see cref="ContactPoint"/> representation of the source element</returns>
-        public static ContactPoint ToContactPoint(this XElement self)
+        public static ContactPoint ToContactPoint(this XElement self, string fhirPropertyPath = null)
         {
             var value = self.Attribute("value")?.Value;
             if (string.IsNullOrWhiteSpace(value))
-                throw new RequiredValueNotFoundException(self, "[@value]");
+                throw new RequiredValueNotFoundException(self, "[@value]", fhirPropertyPath);
 
             ContactPoint.ContactPointUse? contactPointUse;
             var use = self.Attribute("use")?.Value;
@@ -198,7 +218,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     contactPointUse = null;
                     break;
                 default:
-                    throw new UnrecognizedValueException(self, use, elementAttributeName: "use");
+                    throw new UnrecognizedValueException(self, use, elementAttributeName: "use", fhirPropertyPath: fhirPropertyPath);
             }
 
             ContactPoint.ContactPointSystem system;
@@ -231,16 +251,19 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <param name="self">The source element</param>
         /// <param name="systemAndValueMustExist">Optionally indicate if system and value must exist. If one of the values
         /// do not exist a <see cref="InvalidOperationException"/> exception will be thrown. (Default: <c>false</c>)</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided and <paramref name="systemAndValueMustExist"/> is equal to <c>true</c>, then
+        /// the path will be included in the <see cref="RequiredValueNotFoundException"/> exception</param>
         /// <returns>The FHIR <see cref="Identifier"/> representation of the source element</returns>
-        public static Identifier ToIdentifier(this XElement self, bool systemAndValueMustExist = false)
+        public static Identifier ToIdentifier(this XElement self, bool systemAndValueMustExist = false, string fhirPropertyPath = null)
         {
             var systemValue = self.Attribute("root")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(systemValue))
-                throw new RequiredValueNotFoundException(self, "[@root]");
+                throw new RequiredValueNotFoundException(self, "[@root]", $"{fhirPropertyPath}.system");
 
             var codeValue = self.Attribute("extension")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(codeValue))
-                throw new RequiredValueNotFoundException(self, "[@extension]");
+                throw new RequiredValueNotFoundException(self, "[@extension]", $"{fhirPropertyPath}.value");
 
             var identifier = new Identifier(ConvertKnownSystemOid(systemValue), codeValue);
 
@@ -406,13 +429,15 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// Converts an element into its FHIR <see cref="SimpleQuantity" /> representation
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in the <see cref="UnrecognizedValueException"/> exception</param>
         /// <returns>The FHIR <see cref="SimpleQuantity"/> representation of the source element</returns>
-        public static SimpleQuantity ToSimpleQuantity(this XElement self)
+        public static SimpleQuantity ToSimpleQuantity(this XElement self, string fhirPropertyPath = null)
         {
             var value = self.Attribute("value")?.Value;
 
             if (!decimal.TryParse(value, out var dValue))
-                throw new UnrecognizedValueException(self, value, elementAttributeName: "value");
+                throw new UnrecognizedValueException(self, value, elementAttributeName: "value", fhirPropertyPath: fhirPropertyPath);
 
             return new SimpleQuantity { Value = dValue, Unit = self.Attribute("unit")?.Value };
         }
@@ -504,10 +529,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// extension
         /// </summary>
         /// <param name="self">The source element</param>
-        /// <param name="expectedTypes">Provide a list of expected types. If a list is provided and the type that is read
-        /// does not exist in this list, an exception will be thrown</param>
+        /// <param name="expectedTypes">Optionally provide a list of expected types. If a list is provided and the type
+        /// that is read does not exist in this list, an exception will be thrown</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in exceptions thrown by this extension method</param>
         /// <returns>The FHIR representation of the source element, based on reading the 'xsi:type' attribute</returns>
-        public static Element ToFhirElementBasedOnType(this XElement self, params string[] expectedTypes)
+        public static Element ToFhirElementBasedOnType(this XElement self, string[] expectedTypes = null, string fhirPropertyPath = null)
         {
             if (self == null)
                 throw new ArgumentNullException(nameof(self));
@@ -517,10 +544,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             var type = self.Attribute(Defaults.XsiNs + "type")?.Value.ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(type))
-                throw new RequiredValueNotFoundException(self, "[@type]");
+                throw new RequiredValueNotFoundException(self, "[@type]", fhirPropertyPath);
 
-            if (expectedTypes.Any() && !expectedTypes.Select(x => x.ToLowerInvariant()).Contains(type))
-                throw new UnexpectedValueTypeException(self, type);
+            if (expectedTypes != null && expectedTypes.Any() && !expectedTypes.Select(x => x.ToLowerInvariant()).Contains(type))
+                throw new UnexpectedValueTypeException(self, type, fhirPropertyPath);
 
             switch (type)
             {
@@ -528,18 +555,18 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 case "co":
                     // Concept descriptor -> Codeable concept
                     // Coded data -> Codeable concept
-                    return self.ToCodeableConcept();
+                    return self.ToCodeableConcept(fhirPropertyPath);
                 case "st":
                     // Character string -> String
                     return new FhirString(self.GetFirstTextNode());
                 case "pq":
                     // Dimensioned quantity -> Simple quantity
-                    return self.ToSimpleQuantity();
+                    return self.ToSimpleQuantity(fhirPropertyPath);
                 case "ts":
                     // Point in time -> DateTime or Period element
                     return self.ToDateTimeElement();
                 default:
-                    throw new UnrecognizedValueException(self, type, elementAttributeName: "type");
+                    throw new UnrecognizedValueException(self, type, elementAttributeName: "type", fhirPropertyPath: fhirPropertyPath);
             }
         }
 

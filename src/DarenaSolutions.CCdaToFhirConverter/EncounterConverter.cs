@@ -55,18 +55,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                encounter.Identifier.Add(identifierElement.ToIdentifier(true));
+                encounter.Identifier.Add(identifierElement.ToIdentifier(true, "Encounter.identifier"));
             }
 
             // Class - Override when found
             var translationCode = element
                 .FindCodeElementWithTranslation(translationOnly: true)?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Encounter.class");
             if (translationCode?.Coding?.Count > 0)
                 encounter.Class = new Coding(translationCode.Coding[0].System, translationCode.Coding[0].Code);
 
             // Type - CPT Code
-            var encounterCode = element.ToCodeableConcept();
+            var encounterCode = element.ToCodeableConcept("Encounter.type");
             encounter.Type.Add(encounterCode);
 
             // Period
@@ -76,7 +76,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             // Diagnoses
             var encounterDiagnosisElements =
-                element.Elements("n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation");
+                element.XPathSelectElements("n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation", namespaceManager);
             var encounterDiagnosesConverter = new EncounterDiagnosesConditionConverter(PatientId);
             var encounterDiagnoses = encounterDiagnosesConverter.AddToBundle(
                 bundle,

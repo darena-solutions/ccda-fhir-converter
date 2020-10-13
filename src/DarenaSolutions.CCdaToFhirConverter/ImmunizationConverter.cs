@@ -69,7 +69,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToFhirDateTime();
 
             if (immunization.Occurrence == null)
-                throw new RequiredValueNotFoundException(element, "effectiveTime");
+            {
+                throw new RequiredValueNotFoundException(
+                    element,
+                    "effectiveTime",
+                    "Immunization.occurrence");
+            }
 
             var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
             var manufacturedMaterialEl = element.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
@@ -77,7 +82,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 immunization.VaccineCode = manufacturedMaterialEl
                     .Element(Defaults.DefaultNs + "code")?
-                    .ToCodeableConcept();
+                    .ToCodeableConcept("Immunization.vaccineCode");
 
                 immunization.LotNumber = manufacturedMaterialEl
                     .Element(Defaults.DefaultNs + "lotNumberText")?
@@ -85,12 +90,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             if (immunization.VaccineCode == null)
-                throw new RequiredValueNotFoundException(element, "consumable/manufacturedProduct/manufacturedMaterial/code");
+            {
+                throw new RequiredValueNotFoundException(
+                    element,
+                    "consumable/manufacturedProduct/manufacturedMaterial/code",
+                    "Immunization.vaccineCode");
+            }
 
             var statusReasonCodeXPath = "n1:entryRelationship/n1:observation/n1:code";
             immunization.StatusReason = element
                 .XPathSelectElement(statusReasonCodeXPath, namespaceManager)?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Immunization.statusReason");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

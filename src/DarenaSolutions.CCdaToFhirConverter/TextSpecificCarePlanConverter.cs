@@ -56,7 +56,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
             if (string.IsNullOrWhiteSpace(textEl))
-                throw new RequiredValueNotFoundException(element, "text");
+                throw new RequiredValueNotFoundException(element, "text", "CarePlan.text.div");
 
             carePlan.Text = new Narrative
             {
@@ -70,7 +70,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var codeableConcept = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("CarePlan.category");
 
             if (codeableConcept != null)
                 carePlan.Category.Add(codeableConcept);

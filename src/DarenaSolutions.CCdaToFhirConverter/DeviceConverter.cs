@@ -52,7 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             device.Type = element
                 .Element(Defaults.DefaultNs + "playingDevice")?
                 .Element(Defaults.DefaultNs + "code")?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Device.type");
 
             Device.UdiCarrierComponent udiCarrierComponent = null;
             var typeCoding = device.Type?.Coding.FirstOrDefault();
@@ -69,7 +69,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var barcodeValue = barcodeEl.Attribute("extension")?.Value;
                 if (udiCarrierComponent != null && string.IsNullOrWhiteSpace(barcodeValue))
-                    throw new RequiredValueNotFoundException(barcodeEl, "[@extension]");
+                {
+                    throw new RequiredValueNotFoundException(
+                        barcodeEl,
+                        "[@extension]",
+                        "Device.udiCarrier.carrierHRF");
+                }
 
                 if (!string.IsNullOrWhiteSpace(barcodeValue))
                 {
@@ -98,7 +103,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (udiCarrierComponent != null)
             {
                 if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
-                    throw new RequiredValueNotFoundException(element, "playingDevice/code[@code]");
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "playingDevice/code[@code]",
+                        "Device.udiCarrier.deviceIdentifier");
+                }
 
                 device.UdiCarrier.Add(udiCarrierComponent);
             }
@@ -120,27 +130,27 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 switch (code)
                 {
                     case "C101669":
-                        if (valueEl.ToFhirElementBasedOnType("ts") is FhirDateTime manufactureDateTime)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.manufactureDate") is FhirDateTime manufactureDateTime)
                             device.ManufactureDateElement = manufactureDateTime;
 
                         break;
                     case "C101670":
-                        if (valueEl.ToFhirElementBasedOnType("ts") is FhirDateTime expirationDateTime)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.expirationDate") is FhirDateTime expirationDateTime)
                             device.ExpirationDateElement = expirationDateTime;
 
                         break;
                     case "C101671":
-                        if (valueEl.ToFhirElementBasedOnType("st") is FhirString serialNumber)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.serialNumber") is FhirString serialNumber)
                             device.SerialNumber = serialNumber.Value;
 
                         break;
                     case "C101672":
-                        if (valueEl.ToFhirElementBasedOnType("st") is FhirString lotNumber)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.lotNumber") is FhirString lotNumber)
                             device.LotNumber = lotNumber.Value;
 
                         break;
                     case "C113843":
-                        if (valueEl.ToFhirElementBasedOnType("st") is FhirString distinctIdentifier)
+                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.distinctIdentifier") is FhirString distinctIdentifier)
                             device.DistinctIdentifier = distinctIdentifier.Value;
 
                         break;
@@ -157,10 +167,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 string.IsNullOrWhiteSpace(device.DistinctIdentifier))
             {
                 var xPathToRequired =
-                    "../../entryRelationship/organizer/component[*]/observation/code[@code='C101669' or @code='C101670' or " +
+                    "entryRelationship/organizer/component[*]/observation/code[@code='C101669' or @code='C101670' or " +
                     "@code='C101671' or @code='C101672' or @code='C113843']";
 
-                throw new RequiredValueNotFoundException(element, xPathToRequired);
+                var fhirPropertyPaths =
+                    "Device.manufactureDate, " +
+                    "Device.expirationDate, " +
+                    "Device.serialNumber, " +
+                    "Device.lotNumber, " +
+                    "Device.distinctIdentifier";
+
+                throw new RequiredValueNotFoundException(element.Parent.Parent, xPathToRequired, fhirPropertyPaths);
             }
 
             return device;
