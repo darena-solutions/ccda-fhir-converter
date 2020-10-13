@@ -66,7 +66,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var address = addressElement.ToAddress("Organization.address");
                 if (address.LineElement.Count > 4)
-                    throw new ProfileRelatedException(addressElement, "More than 4 address lines were provided", "streetAddressLine");
+                {
+                    throw new ProfileRelatedException(
+                        addressElement,
+                        "More than 4 address lines were provided",
+                        "streetAddressLine",
+                        "Organization.address.line");
+                }
 
                 organization.Address.Add(address);
             }
