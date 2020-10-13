@@ -73,7 +73,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             foreach (var nameElement in nameElements)
             {
-                var humanName = nameElement.ToHumanName();
+                var humanName = nameElement.ToHumanName("Practitioner.name");
                 if (string.IsNullOrWhiteSpace(humanName.Family))
                     throw new RequiredValueNotFoundException(nameElement, "family", "Practitioner.name.family");
 
@@ -83,7 +83,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var addressElements = element.Elements(Defaults.DefaultNs + "addr");
             foreach (var addressElement in addressElements)
             {
-                practitioner.Address.Add(addressElement.ToAddress());
+                practitioner.Address.Add(addressElement.ToAddress("Practitioner.address"));
             }
 
             var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
@@ -97,7 +97,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 practitioner.Qualification.Add(new Practitioner.QualificationComponent
                 {
-                    Code = qualificationCode.ToCodeableConcept()
+                    Code = qualificationCode.ToCodeableConcept("Practitioner.qualification.code")
                 });
             }
 

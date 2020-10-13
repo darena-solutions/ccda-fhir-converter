@@ -51,7 +51,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var addressElement = element.Element(Defaults.DefaultNs + "addr");
             if (addressElement != null)
-                patient.Address.Add(addressElement.ToAddress());
+                patient.Address.Add(addressElement.ToAddress("Patient.address"));
 
             var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecomElement in telecomElements)
@@ -65,7 +65,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var nameElements = patientElement.Elements(Defaults.DefaultNs + "name");
                 foreach (var nameElement in nameElements)
                 {
-                    patient.Name.Add(nameElement.ToHumanName());
+                    patient.Name.Add(nameElement.ToHumanName("Patient.name"));
                 }
 
                 if (!patient.Name.Any())
@@ -90,7 +90,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 var maritalStatusElement = patientElement.Element(Defaults.DefaultNs + "maritalStatusCode");
                 if (maritalStatusElement != null)
-                    patient.MaritalStatus = maritalStatusElement.ToCodeableConcept();
+                    patient.MaritalStatus = maritalStatusElement.ToCodeableConcept("Patient.maritalStatus");
 
                 var defaultCodeElements = new List<XElement>();
                 var stdcCodeElements = new List<XElement>();
@@ -123,7 +123,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .Element(Defaults.DefaultNs + "addr");
 
                 if (birthPlaceAddressElement != null)
-                    patient.Extension.Add(new Extension("http://hl7.org/fhir/StructureDefinition/birthPlace", birthPlaceAddressElement.ToAddress()));
+                {
+                    patient.Extension.Add(new Extension(
+                        "http://hl7.org/fhir/StructureDefinition/birthPlace",
+                        birthPlaceAddressElement.ToAddress("Patient.extension")));
+                }
 
                 var guardianElement = patientElement.Element(Defaults.DefaultNs + "guardian");
                 if (guardianElement != null)
@@ -132,11 +136,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     var codeElement = guardianElement.Element(Defaults.DefaultNs + "code");
                     if (codeElement != null)
-                        patient.Contact[0].Relationship.Add(codeElement.ToCodeableConcept());
+                        patient.Contact[0].Relationship.Add(codeElement.ToCodeableConcept("Patient.contact.relationship"));
 
                     var guardianAddressElement = guardianElement.Element(Defaults.DefaultNs + "addr");
                     if (guardianAddressElement != null)
-                        patient.Contact[0].Address = guardianAddressElement.ToAddress();
+                        patient.Contact[0].Address = guardianAddressElement.ToAddress("Patient.contact.address");
 
                     var guardianTelecomElement = guardianElement.Element(Defaults.DefaultNs + "telecom");
                     if (guardianTelecomElement != null)
@@ -144,7 +148,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     var guardianNameElement = guardianElement.Element(Defaults.DefaultNs + "name");
                     if (guardianNameElement != null)
-                        patient.Contact[0].Name = guardianNameElement.ToHumanName();
+                        patient.Contact[0].Name = guardianNameElement.ToHumanName("Patient.contact.name");
                 }
 
                 var communicationElement = patientElement.Element(Defaults.DefaultNs + "languageCommunication");
@@ -154,7 +158,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 {
                     var communicationComponent = new Patient.CommunicationComponent
                     {
-                        Language = communicationCodeElement.ToCodeableConcept()
+                        Language = communicationCodeElement.ToCodeableConcept("Patient.communication.language")
                     };
 
                     communicationComponent.Language.Coding[0].System = "urn:ietf:bcp:47";

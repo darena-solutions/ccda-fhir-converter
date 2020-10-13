@@ -58,7 +58,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             clinicalImpression.DateElement = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToFhirDateTime();
             clinicalImpression.Code = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("ClinicalImpression.code");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

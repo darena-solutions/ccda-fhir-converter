@@ -63,7 +63,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             // Code
             observation.Code = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Observation.code");
 
             if (observation.Code == null)
                 throw new RequiredValueNotFoundException(element, "code", "Observation.code");

@@ -82,7 +82,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 immunization.VaccineCode = manufacturedMaterialEl
                     .Element(Defaults.DefaultNs + "code")?
-                    .ToCodeableConcept();
+                    .ToCodeableConcept("Immunization.vaccineCode");
 
                 immunization.LotNumber = manufacturedMaterialEl
                     .Element(Defaults.DefaultNs + "lotNumberText")?
@@ -100,7 +100,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var statusReasonCodeXPath = "n1:entryRelationship/n1:observation/n1:code";
             immunization.StatusReason = element
                 .XPathSelectElement(statusReasonCodeXPath, namespaceManager)?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Immunization.statusReason");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

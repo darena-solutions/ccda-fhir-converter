@@ -61,12 +61,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             // Class - Override when found
             var translationCode = element
                 .FindCodeElementWithTranslation(translationOnly: true)?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Encounter.class");
             if (translationCode?.Coding?.Count > 0)
                 encounter.Class = new Coding(translationCode.Coding[0].System, translationCode.Coding[0].Code);
 
             // Type - CPT Code
-            var encounterCode = element.ToCodeableConcept();
+            var encounterCode = element.ToCodeableConcept("Encounter.type");
             encounter.Type.Add(encounterCode);
 
             // Period

@@ -70,7 +70,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var codeableConcept = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("CarePlan.category");
 
             if (codeableConcept != null)
                 carePlan.Category.Add(codeableConcept);

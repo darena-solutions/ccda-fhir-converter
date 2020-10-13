@@ -52,7 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             device.Type = element
                 .Element(Defaults.DefaultNs + "playingDevice")?
                 .Element(Defaults.DefaultNs + "code")?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Device.type");
 
             Device.UdiCarrierComponent udiCarrierComponent = null;
             var typeCoding = device.Type?.Coding.FirstOrDefault();

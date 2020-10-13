@@ -62,7 +62,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             // Type - Code
-            var locationCode = element.ToCodeableConcept();
+            var locationCode = element.ToCodeableConcept("Location.type");
             location.Type.Add(locationCode);
 
             // Name
@@ -80,7 +80,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var addrXPath = "n1:location/n1:addr";
             var addressElement = element.XPathSelectElements(addrXPath, namespaceManager).FirstOrDefault();
             if (addressElement != null)
-                location.Address = addressElement.ToAddress();
+                location.Address = addressElement.ToAddress("Location.address");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {

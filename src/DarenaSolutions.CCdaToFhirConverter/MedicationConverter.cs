@@ -48,7 +48,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
             medication.Code = element
                 .Element(Defaults.DefaultNs + "code")?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Medication.code");
 
             if (medication.Code == null)
                 throw new RequiredValueNotFoundException(element, "code", "Medication.code");

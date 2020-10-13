@@ -57,7 +57,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             procedure.Code = element
                 .FindCodeElementWithTranslation()?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Procedure.code");
 
             if (procedure.Code == null)
                 throw new RequiredValueNotFoundException(element, "code", "Procedure.code");

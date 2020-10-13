@@ -42,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
             condition.Code = element
                 .FindCodeElementWithTranslation(codeElementName: "value")?
-                .ToCodeableConcept();
+                .ToCodeableConcept("Condition.code");
 
             if (condition.Code == null)
                 throw new RequiredValueNotFoundException(element, "value", "Condition.code");
