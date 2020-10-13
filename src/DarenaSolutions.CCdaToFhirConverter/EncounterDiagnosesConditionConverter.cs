@@ -45,7 +45,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToCodeableConcept();
 
             if (condition.Code == null)
-                throw new RequiredValueNotFoundException(element, "value");
+                throw new RequiredValueNotFoundException(element, "value", "Condition.code");
 
             condition.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/condition-category",

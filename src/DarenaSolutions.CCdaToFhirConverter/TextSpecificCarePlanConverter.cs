@@ -56,7 +56,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
             if (string.IsNullOrWhiteSpace(textEl))
-                throw new RequiredValueNotFoundException(element, "text");
+                throw new RequiredValueNotFoundException(element, "text", "CarePlan.text.div");
 
             carePlan.Text = new Narrative
             {

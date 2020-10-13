@@ -51,7 +51,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                var identifier = identifierElement.ToIdentifier(true);
+                var identifier = identifierElement.ToIdentifier(true, "Practitioner.identifier");
                 var cacheKey = $"{ResourceType.Practitioner}|{identifier.System}|{identifier.Value}";
                 if (cache.TryGetValue(cacheKey, out var resource))
                     return resource;
@@ -61,7 +61,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             if (!practitioner.Identifier.Any())
-                throw new RequiredValueNotFoundException(element, "id");
+                throw new RequiredValueNotFoundException(element, "id", "Practitioner.identifier");
 
             var nameElements = element
                 .Element(Defaults.DefaultNs + "assignedPerson")?
@@ -69,13 +69,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToList();
 
             if (nameElements == null || !nameElements.Any())
-                throw new RequiredValueNotFoundException(element, "assignedPerson/name");
+                throw new RequiredValueNotFoundException(element, "assignedPerson/name", "Practitioner.name");
 
             foreach (var nameElement in nameElements)
             {
                 var humanName = nameElement.ToHumanName();
                 if (string.IsNullOrWhiteSpace(humanName.Family))
-                    throw new RequiredValueNotFoundException(nameElement, "family");
+                    throw new RequiredValueNotFoundException(nameElement, "family", "Practitioner.name.family");
 
                 practitioner.Name.Add(humanName);
             }
@@ -89,7 +89,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecomElement in telecomElements)
             {
-                practitioner.Telecom.Add(telecomElement.ToContactPoint());
+                practitioner.Telecom.Add(telecomElement.ToContactPoint("Practitioner.telecom"));
             }
 
             var qualificationCodes = element.Elements(Defaults.DefaultNs + "code");

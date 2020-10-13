@@ -43,7 +43,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                patient.Identifier.Add(identifierElement.ToIdentifier(true));
+                patient.Identifier.Add(identifierElement.ToIdentifier(true, "Patient.identifier"));
             }
 
             if (!patient.Identifier.Any())
@@ -56,7 +56,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecomElement in telecomElements)
             {
-                patient.Telecom.Add(telecomElement.ToContactPoint());
+                patient.Telecom.Add(telecomElement.ToContactPoint("Patient.telecom"));
             }
 
             var patientElement = element.Element(Defaults.DefaultNs + "patient");
@@ -140,7 +140,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     var guardianTelecomElement = guardianElement.Element(Defaults.DefaultNs + "telecom");
                     if (guardianTelecomElement != null)
-                        patient.Contact[0].Telecom.Add(guardianTelecomElement.ToContactPoint());
+                        patient.Contact[0].Telecom.Add(guardianTelecomElement.ToContactPoint("Patient.contact.telecom"));
 
                     var guardianNameElement = guardianElement.Element(Defaults.DefaultNs + "name");
                     if (guardianNameElement != null)

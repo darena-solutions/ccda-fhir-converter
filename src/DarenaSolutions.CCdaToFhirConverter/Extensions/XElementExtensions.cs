@@ -166,12 +166,14 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// Converts an element into its FHIR <see cref="ContactPoint"/> representation
         /// </summary>
         /// <param name="self">The source element</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided, it will be included in the <see cref="RequiredValueNotFoundException"/> exception</param>
         /// <returns>The FHIR <see cref="ContactPoint"/> representation of the source element</returns>
-        public static ContactPoint ToContactPoint(this XElement self)
+        public static ContactPoint ToContactPoint(this XElement self, string fhirPropertyPath = null)
         {
             var value = self.Attribute("value")?.Value;
             if (string.IsNullOrWhiteSpace(value))
-                throw new RequiredValueNotFoundException(self, "[@value]");
+                throw new RequiredValueNotFoundException(self, "[@value]", $"{fhirPropertyPath}.value");
 
             ContactPoint.ContactPointUse? contactPointUse;
             var use = self.Attribute("use")?.Value;
@@ -231,16 +233,19 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <param name="self">The source element</param>
         /// <param name="systemAndValueMustExist">Optionally indicate if system and value must exist. If one of the values
         /// do not exist a <see cref="InvalidOperationException"/> exception will be thrown. (Default: <c>false</c>)</param>
+        /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
+        /// mapped to. If a path is provided and <paramref name="systemAndValueMustExist"/> is equal to <c>true</c>, then
+        /// the path will be included in the <see cref="RequiredValueNotFoundException"/> exception</param>
         /// <returns>The FHIR <see cref="Identifier"/> representation of the source element</returns>
-        public static Identifier ToIdentifier(this XElement self, bool systemAndValueMustExist = false)
+        public static Identifier ToIdentifier(this XElement self, bool systemAndValueMustExist = false, string fhirPropertyPath = null)
         {
             var systemValue = self.Attribute("root")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(systemValue))
-                throw new RequiredValueNotFoundException(self, "[@root]");
+                throw new RequiredValueNotFoundException(self, "[@root]", $"{fhirPropertyPath}.system");
 
             var codeValue = self.Attribute("extension")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(codeValue))
-                throw new RequiredValueNotFoundException(self, "[@extension]");
+                throw new RequiredValueNotFoundException(self, "[@extension]", $"{fhirPropertyPath}.value");
 
             var identifier = new Identifier(ConvertKnownSystemOid(systemValue), codeValue);
 

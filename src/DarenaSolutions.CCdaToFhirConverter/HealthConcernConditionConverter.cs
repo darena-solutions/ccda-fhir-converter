@@ -46,7 +46,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToFhirElementBasedOnType("co", "cd");
 
             if (valueEl == null)
-                throw new RequiredValueNotFoundException(element, "../../entry/observation/value");
+            {
+                throw new RequiredValueNotFoundException(
+                    element,
+                    "../../entry/observation/value",
+                    "Condition.code");
+            }
 
             condition.Code = (CodeableConcept)valueEl;
             condition.Category.Add(new CodeableConcept(

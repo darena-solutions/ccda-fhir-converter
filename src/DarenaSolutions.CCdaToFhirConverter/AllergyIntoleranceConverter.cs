@@ -109,7 +109,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .ToCodeableConcept();
 
                 if (substanceCodeableConcept == null)
-                    throw new RequiredValueNotFoundException(element, "participant/participantRole/playingEntity/code");
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "participant/participantRole/playingEntity/code",
+                        "AllergyIntolerance.code");
+                }
 
                 allergyIntolerance.Code = substanceCodeableConcept;
 
@@ -166,7 +171,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     {
                         throw new RequiredValueNotFoundException(
                             obsEntryRelationships[0].Parent,
-                            $"{obsEntryRelationships[0].Name.LocalName}[*]/observation/value");
+                            $"{obsEntryRelationships[0].Name.LocalName}[*]/observation/value",
+                            "AllergyIntolerance.reaction");
                     }
 
                     allergyIntolerance.Reaction.Add(reaction);

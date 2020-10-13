@@ -39,7 +39,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             if (string.IsNullOrWhiteSpace(organization.Name))
-                throw new RequiredValueNotFoundException(element, "name");
+                throw new RequiredValueNotFoundException(element, "name", "Organization.name");
 
             organization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-organization"));
 
@@ -58,7 +58,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var telecoms = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecom in telecoms)
             {
-                organization.Telecom.Add(telecom.ToContactPoint());
+                organization.Telecom.Add(telecom.ToContactPoint("Organization.telecom"));
             }
 
             var addressElements = element.Elements(Defaults.DefaultNs + "addr");

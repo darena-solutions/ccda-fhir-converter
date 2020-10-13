@@ -66,7 +66,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToCodeableConcept();
 
             if (observation.Code == null)
-                throw new RequiredValueNotFoundException(element, "code");
+                throw new RequiredValueNotFoundException(element, "code", "Observation.code");
 
             observation.Effective = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?

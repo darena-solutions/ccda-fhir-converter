@@ -55,7 +55,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                encounter.Identifier.Add(identifierElement.ToIdentifier(true));
+                encounter.Identifier.Add(identifierElement.ToIdentifier(true, "Encounter.identifier"));
             }
 
             // Class - Override when found

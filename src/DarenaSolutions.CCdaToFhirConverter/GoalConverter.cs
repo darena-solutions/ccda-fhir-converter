@@ -77,7 +77,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var description = descriptionEl?.ToFhirElementBasedOnType("st");
 
             if (description == null)
-                throw new RequiredValueNotFoundException(element, "value");
+                throw new RequiredValueNotFoundException(element, "value", "Goal.description.text");
 
             goal.Description = new CodeableConcept
             {

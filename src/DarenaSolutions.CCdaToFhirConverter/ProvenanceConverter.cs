@@ -57,14 +57,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Value;
 
             if (string.IsNullOrWhiteSpace(dateRecordedValue))
-                throw new RequiredValueNotFoundException(element, "time[@value]");
+                throw new RequiredValueNotFoundException(element, "time[@value]", "Provenance.recorded");
 
             provenance.Recorded = dateRecordedValue.ParseCCdaDateTimeOffset();
 
             // Agent
             var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
             if (assignedAuthorElement == null)
-                throw new RequiredValueNotFoundException(element, "assignedAuthor");
+                throw new RequiredValueNotFoundException(element, "assignedAuthor", "Provenance.agent.who");
 
             var practitionerConverter = new PractitionerConverter(PatientId);
             var practitioners = practitionerConverter.AddToBundle(

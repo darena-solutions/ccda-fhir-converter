@@ -69,7 +69,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var barcodeValue = barcodeEl.Attribute("extension")?.Value;
                 if (udiCarrierComponent != null && string.IsNullOrWhiteSpace(barcodeValue))
-                    throw new RequiredValueNotFoundException(barcodeEl, "[@extension]");
+                {
+                    throw new RequiredValueNotFoundException(
+                        barcodeEl,
+                        "[@extension]",
+                        "Device.udiCarrier.carrierHRF");
+                }
 
                 if (!string.IsNullOrWhiteSpace(barcodeValue))
                 {
@@ -98,7 +103,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (udiCarrierComponent != null)
             {
                 if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
-                    throw new RequiredValueNotFoundException(element, "playingDevice/code[@code]");
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "playingDevice/code[@code]",
+                        "Device.udiCarrier.deviceIdentifier");
+                }
 
                 device.UdiCarrier.Add(udiCarrierComponent);
             }
@@ -160,7 +170,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     "../../entryRelationship/organizer/component[*]/observation/code[@code='C101669' or @code='C101670' or " +
                     "@code='C101671' or @code='C101672' or @code='C113843']";
 
-                throw new RequiredValueNotFoundException(element, xPathToRequired);
+                var fhirPropertyPaths =
+                    "Device.manufactureDate, " +
+                    "Device.expirationDate, " +
+                    "Device.serialNumber, " +
+                    "Device.lotNumber, " +
+                    "Device.distinctIdentifier";
+
+                throw new RequiredValueNotFoundException(element, xPathToRequired, fhirPropertyPaths);
             }
 
             return device;

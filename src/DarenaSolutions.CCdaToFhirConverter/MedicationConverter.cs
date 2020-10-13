@@ -51,7 +51,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .ToCodeableConcept();
 
             if (medication.Code == null)
-                throw new RequiredValueNotFoundException(element, "code");
+                throw new RequiredValueNotFoundException(element, "code", "Medication.code");
 
             bundle.Entry.Add(new Bundle.EntryComponent
             {
