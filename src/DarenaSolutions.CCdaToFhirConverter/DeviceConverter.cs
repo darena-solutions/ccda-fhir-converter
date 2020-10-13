@@ -167,7 +167,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 string.IsNullOrWhiteSpace(device.DistinctIdentifier))
             {
                 var xPathToRequired =
-                    "../../entryRelationship/organizer/component[*]/observation/code[@code='C101669' or @code='C101670' or " +
+                    "entryRelationship/organizer/component[*]/observation/code[@code='C101669' or @code='C101670' or " +
                     "@code='C101671' or @code='C101672' or @code='C113843']";
 
                 var fhirPropertyPaths =
@@ -177,7 +177,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     "Device.lotNumber, " +
                     "Device.distinctIdentifier";
 
-                throw new RequiredValueNotFoundException(element, xPathToRequired, fhirPropertyPaths);
+                throw new RequiredValueNotFoundException(element.Parent.Parent, xPathToRequired, fhirPropertyPaths);
             }
 
             return device;
