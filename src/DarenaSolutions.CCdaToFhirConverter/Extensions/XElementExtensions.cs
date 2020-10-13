@@ -43,8 +43,8 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 self.Attribute("displayName")?.Value,
                 null);
 
-            var coding = codeableConcept.Coding.First();
-            if (string.IsNullOrWhiteSpace(coding.Code))
+            var coding = codeableConcept.Coding.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(coding?.Code))
             {
                 var nullFlavorValue = self.Attribute("nullFlavor")?.Value;
 
@@ -57,6 +57,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                             nullFlavorValue,
                             elementAttributeName: "nullFlavor",
                             fhirPropertyPath: fhirPropertyPath);
+                    }
+
+                    if (coding == null)
+                    {
+                        coding = new Coding();
+                        codeableConcept.Coding.Add(coding);
                     }
 
                     coding.CodeElement = new Code
@@ -253,11 +259,11 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             var systemValue = self.Attribute("root")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(systemValue))
-                throw new RequiredValueNotFoundException(self, "[@root]", fhirPropertyPath);
+                throw new RequiredValueNotFoundException(self, "[@root]", $"{fhirPropertyPath}.system");
 
             var codeValue = self.Attribute("extension")?.Value;
             if (systemAndValueMustExist && string.IsNullOrWhiteSpace(codeValue))
-                throw new RequiredValueNotFoundException(self, "[@extension]", fhirPropertyPath);
+                throw new RequiredValueNotFoundException(self, "[@extension]", $"{fhirPropertyPath}.value");
 
             var identifier = new Identifier(ConvertKnownSystemOid(systemValue), codeValue);
 

@@ -76,7 +76,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             // Diagnoses
             var encounterDiagnosisElements =
-                element.Elements("n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation");
+                element.XPathSelectElements("n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation", namespaceManager);
             var encounterDiagnosesConverter = new EncounterDiagnosesConditionConverter(PatientId);
             var encounterDiagnoses = encounterDiagnosesConverter.AddToBundle(
                 bundle,

@@ -59,7 +59,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
 
             var errorMessage = $"Required value at path '{fullPath}' could not be found";
             if (!string.IsNullOrWhiteSpace(fhirPropertyPath))
-                errorMessage += $". Value required for FHIR property(s): {fhirPropertyPath}";
+                errorMessage += $". Value required for FHIR property(ies): {fhirPropertyPath}";
 
             return errorMessage;
         }
