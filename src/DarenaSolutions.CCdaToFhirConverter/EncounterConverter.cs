@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -56,7 +55,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                encounter.Identifier.Add(identifierElement.ToIdentifier());
+                encounter.Identifier.Add(identifierElement.ToIdentifier(true));
             }
 
             // Class - Override when found
@@ -85,7 +84,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 namespaceManager,
                 cache);
 
-            if (encounterDiagnoses?.Count > 0)
+            if (encounterDiagnoses.Count > 0)
             {
                 foreach (var condition in encounterDiagnoses)
                 {
@@ -97,43 +96,41 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             // Practitioner - Author
-            var practitionerElement =
-                element.XPathSelectElements("/n1:ClinicalDocument/n1:author/n1:assignedAuthor")
-                .FirstOrDefault();
-            var identifier =
-                practitionerElement?.Elements(Defaults.DefaultNs + "id").FirstOrDefault().ToIdentifier(true);
-            if (identifier != null)
+            var practitionerElements =
+                element.XPathSelectElements("/n1:ClinicalDocument/n1:author/n1:assignedAuthor", namespaceManager);
+
+            var practitionerConverter = new PractitionerConverter(PatientId);
+            var practitioners = practitionerConverter.AddToBundle(
+                bundle,
+                practitionerElements,
+                namespaceManager,
+                cache);
+
+            if (practitioners.Count > 0)
             {
-                // Check Practitioner List
-                var cacheKey = $"{ResourceType.Practitioner}|{identifier.System}|{identifier.Value}";
-                cache.TryGetValue(cacheKey, out var resource);
-                if (resource != null)
+                encounter.Participant.Add(new Encounter.ParticipantComponent
                 {
-                    encounter.Participant.Add(new Encounter.ParticipantComponent
-                    {
-                        Individual = new ResourceReference($"urn:uuid:{resource.Id}")
-                    });
-                }
+                    Individual = new ResourceReference($"urn:uuid:{practitioners[0].Id}")
+                });
             }
 
             // Location - Healthcare Facility
-            var locationElement =
-                element.XPathSelectElements("/n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:location/n1:healthCareFacility")
-                .FirstOrDefault();
-            identifier =
-                locationElement?.Elements(Defaults.DefaultNs + "id").FirstOrDefault().ToIdentifier(true);
-            if (identifier != null)
+            var locationElements =
+                element.XPathSelectElements("/n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:location/n1:healthCareFacility", namespaceManager);
+
+            var locationConverter = new LocationConverter(PatientId);
+            var locations = locationConverter.AddToBundle(
+                bundle,
+                locationElements,
+                namespaceManager,
+                cache);
+
+            if (locations.Count > 0)
             {
-                // Check Location List
-                var cacheKey = $"{ResourceType.Location}|{identifier.System}|{identifier.Value}";
-                cache.TryGetValue(cacheKey, out var resource);
-                if (resource != null)
+                encounter.Location.Add(new Encounter.LocationComponent()
                 {
-                    encounter.Location.Add(new Encounter.LocationComponent()
-                    {
-                        Location = new ResourceReference($"urn:uuid:{resource.Id}")
-                    });
-                }
+                    Location = new ResourceReference($"urn:uuid:{locations[0].Id}")
+                });
             }
 
             bundle.Entry.Add(new Bundle.EntryComponent

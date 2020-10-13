@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
@@ -60,9 +61,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 cache.Add(cacheKey, location);
             }
 
-            if (!location.Identifier.Any())
-                throw new RequiredValueNotFoundException(element, "id");
-
             // Type - Code
             var locationCode = element.ToCodeableConcept();
             location.Type.Add(locationCode);
@@ -79,7 +77,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             location.Name = nameElement.Value;
 
             // Address
-            var addressElement = element.Elements("n1:location/n1:addr").FirstOrDefault();
+            var addrXPath = "n1:location/n1:addr";
+            var addressElement = element.XPathSelectElements(addrXPath, namespaceManager).FirstOrDefault();
             if (addressElement != null)
                 location.Address = addressElement.ToAddress();
 
