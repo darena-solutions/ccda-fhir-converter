@@ -6,6 +6,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Utility;
@@ -47,7 +48,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             if (!patient.Identifier.Any())
-                throw new InvalidOperationException($"No patient identifiers were found in: {element}");
+                throw new RequiredValueNotFoundException(element, "id", "Patient.identifier");
 
             var addressElement = element.Element(Defaults.DefaultNs + "addr");
             if (addressElement != null)
@@ -69,15 +70,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
 
                 if (!patient.Name.Any())
-                    throw new InvalidOperationException($"No patient names were found in: {element}");
+                    throw new RequiredValueNotFoundException(patientElement, "patient/name", "Patient.name");
 
                 var genderValue = patientElement.Element(Defaults.DefaultNs + "administrativeGenderCode")?.Attribute("displayName")?.Value;
                 if (string.IsNullOrWhiteSpace(genderValue))
-                    throw new InvalidOperationException($"No patient gender was found in: {patientElement}");
+                    throw new RequiredValueNotFoundException(patientElement, "administrativeGenderCode[@displayName]", "Patient.gender");
 
                 var administrativeGender = EnumUtility.ParseLiteral<AdministrativeGender>(genderValue, true);
                 if (administrativeGender == null)
-                    throw new InvalidOperationException($"Could not determine administrative gender from value '{genderValue}'");
+                {
+                    throw new UnrecognizedValueException(
+                        patientElement,
+                        genderValue,
+                        "administrativeGenderCode",
+                        "displayName",
+                        "Patient.gender");
+                }
 
                 patient.Gender = administrativeGender;
 
@@ -202,7 +210,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                             communicationComponent.Language.Coding[0].Display = "French";
                             break;
                         default:
-                            throw new InvalidOperationException($"Cannot recognize the language code '{communicationComponent.Language.Coding[0].Code}'");
+                            throw new UnrecognizedValueException(
+                                communicationCodeElement,
+                                communicationComponent.Language.Coding[0].Code,
+                                elementAttributeName: "code",
+                                fhirPropertyPath: "Patient.communication.language.coding.code");
                     }
 
                     var preferredValue = communicationElement
@@ -303,7 +315,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             if (isRace && ombCategoryCount > 5)
-                throw new InvalidOperationException("More than 5 omb category race codes were found");
+            {
+                throw new ProfileRelatedException(
+                    defaultCodes[0].Parent,
+                    "More than 5 omb category race codes were found",
+                    defaultCodes[0].Name.LocalName,
+                    "Patient.extension");
+            }
 
             var textExtension = new Extension { Url = "text" };
 
