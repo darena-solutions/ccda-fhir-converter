@@ -24,6 +24,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Exceptions
         {
             Element = element;
             AdditionalXPath = additionalXPath;
+            FhirPropertyPath = fhirPropertyPath;
         }
 
         /// <summary>
