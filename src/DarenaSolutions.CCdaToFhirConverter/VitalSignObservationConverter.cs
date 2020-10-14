@@ -8,7 +8,6 @@ using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
-using Exception = System.Exception;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
@@ -17,6 +16,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
     /// </summary>
     public class VitalSignObservationConverter : BaseObservationConverter
     {
+        private const string GeneralVitalSignProfileUri = "http://hl7.org/fhir/StructureDefinition/vitalsigns";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="VitalSignObservationConverter"/> class
         /// </summary>
@@ -61,7 +62,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-pulse-oximetry"));
                     break;
                 default:
-                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
+                    observation.Meta.ProfileElement.Add(new Canonical(GeneralVitalSignProfileUri));
                     break;
             }
 
@@ -137,7 +138,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     break;
             }
 
-            if (observation.Effective == null)
+            // The effective time is not required for specific vital signs, but is required for the generic vital sign
+            if (observation.Meta.ProfileElement[0].Value == GeneralVitalSignProfileUri && observation.Effective == null)
             {
                 try
                 {
