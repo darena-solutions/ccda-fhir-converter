@@ -32,11 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid();
             var provenance = new Provenance
@@ -50,38 +46,25 @@ namespace DarenaSolutions.CCdaToFhirConverter
             provenance.Meta.ProfileElement.Add(
                 new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
 
-            // Date Recorded
-            var dateRecordedValue = element
-                .Element(Defaults.DefaultNs + "time")?
-                .Attribute("value")?
-                .Value;
+            try
+            {
+                // Date Recorded
+                var dateRecordedValue = element
+                    .Element(Defaults.DefaultNs + "time")?
+                    .Attribute("value")?
+                    .Value;
 
-            if (string.IsNullOrWhiteSpace(dateRecordedValue))
-                throw new RequiredValueNotFoundException(element, "time[@value]", "Provenance.recorded");
+                if (string.IsNullOrWhiteSpace(dateRecordedValue))
+                    throw new RequiredValueNotFoundException(element, "time[@value]", "Provenance.recorded");
 
-            provenance.Recorded = dateRecordedValue.ParseCCdaDateTimeOffset();
+                provenance.Recorded = dateRecordedValue.ParseCCdaDateTimeOffset();
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             // Agent
-            var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
-            if (assignedAuthorElement == null)
-                throw new RequiredValueNotFoundException(element, "assignedAuthor", "Provenance.agent.who");
-
-            var practitionerConverter = new PractitionerConverter(PatientId);
-            var practitioners = practitionerConverter.AddToBundle(
-                bundle,
-                new List<XElement> { assignedAuthorElement },
-                namespaceManager,
-                cache);
-
-            var representedOrganizationElement =
-                assignedAuthorElement.Element(Defaults.DefaultNs + "representedOrganization");
-            var representedOrganizationConverter = new OrganizationConverter();
-            var representedOrganization = representedOrganizationConverter.AddToBundle(
-                bundle,
-                representedOrganizationElement,
-                namespaceManager,
-                cache);
-
             var agent = new Provenance.AgentComponent
             {
                 Type = new CodeableConcept
@@ -95,16 +78,48 @@ namespace DarenaSolutions.CCdaToFhirConverter
                             Code = "author"
                         }
                     }
-                },
-                Who = new ResourceReference($"urn:uuid:{practitioners[0].Id}")
+                }
             };
 
-            if (representedOrganization != null)
-                agent.OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganization.Id}");
+            try
+            {
+                var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
+                if (assignedAuthorElement == null)
+                    throw new RequiredValueNotFoundException(element, "assignedAuthor", "Provenance.agent.who");
+
+                try
+                {
+                    var practitionerConverter = new PractitionerConverter(PatientId);
+                    var practitioners = practitionerConverter.AddToBundle(new List<XElement> { assignedAuthorElement }, context);
+                    agent.Who = new ResourceReference($"urn:uuid:{practitioners[0].Id}");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+
+                try
+                {
+                    var representedOrganizationElement = assignedAuthorElement.Element(Defaults.DefaultNs + "representedOrganization");
+                    var representedOrganizationConverter = new OrganizationConverter();
+                    var representedOrganization = representedOrganizationConverter.AddToBundle(representedOrganizationElement, context);
+
+                    if (representedOrganization != null)
+                        agent.OnBehalfOf = new ResourceReference($"urn:uuid:{representedOrganization.Id}");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             provenance.Agent.Add(agent);
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = provenance

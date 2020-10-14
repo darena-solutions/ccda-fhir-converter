@@ -33,11 +33,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var device = new Device
@@ -49,10 +45,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
 
-            device.Type = element
-                .Element(Defaults.DefaultNs + "playingDevice")?
-                .Element(Defaults.DefaultNs + "code")?
-                .ToCodeableConcept("Device.type");
+            try
+            {
+                device.Type = element
+                    .Element(Defaults.DefaultNs + "playingDevice")?
+                    .Element(Defaults.DefaultNs + "code")?
+                    .ToCodeableConcept("Device.type");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             Device.UdiCarrierComponent udiCarrierComponent = null;
             var typeCoding = device.Type?.Coding.FirstOrDefault();
@@ -67,24 +70,31 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var barcodeEl = element.Element(Defaults.DefaultNs + "id");
             if (barcodeEl != null)
             {
-                var barcodeValue = barcodeEl.Attribute("extension")?.Value;
-                if (udiCarrierComponent != null && string.IsNullOrWhiteSpace(barcodeValue))
+                try
                 {
-                    throw new RequiredValueNotFoundException(
-                        barcodeEl,
-                        "[@extension]",
-                        "Device.udiCarrier.carrierHRF");
+                    var barcodeValue = barcodeEl.Attribute("extension")?.Value;
+                    if (udiCarrierComponent != null && string.IsNullOrWhiteSpace(barcodeValue))
+                    {
+                        throw new RequiredValueNotFoundException(
+                            barcodeEl,
+                            "[@extension]",
+                            "Device.udiCarrier.carrierHRF");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(barcodeValue))
+                    {
+                        udiCarrierComponent ??= new Device.UdiCarrierComponent();
+                        var cacheKey = $"{ResourceType.Device}|{barcodeValue}";
+                        if (context.Cache.TryGetValue(cacheKey, out var resource))
+                            return resource;
+
+                        udiCarrierComponent.CarrierHRF = barcodeValue;
+                        context.Cache.Add(cacheKey, device);
+                    }
                 }
-
-                if (!string.IsNullOrWhiteSpace(barcodeValue))
+                catch (Exception exception)
                 {
-                    udiCarrierComponent ??= new Device.UdiCarrierComponent();
-                    var cacheKey = $"{ResourceType.Device}|{barcodeValue}";
-                    if (cache.TryGetValue(cacheKey, out var resource))
-                        return resource;
-
-                    udiCarrierComponent.CarrierHRF = barcodeValue;
-                    cache.Add(cacheKey, device);
+                    context.Exceptions.Add(exception);
                 }
             }
 
@@ -100,21 +110,28 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 udiCarrierComponent.Issuer = scopingEntityValue;
             }
 
-            if (udiCarrierComponent != null)
+            try
             {
-                if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
+                if (udiCarrierComponent != null)
                 {
-                    throw new RequiredValueNotFoundException(
-                        element,
-                        "playingDevice/code[@code]",
-                        "Device.udiCarrier.deviceIdentifier");
-                }
+                    if (string.IsNullOrWhiteSpace(udiCarrierComponent.DeviceIdentifier))
+                    {
+                        throw new RequiredValueNotFoundException(
+                            element,
+                            "playingDevice/code[@code]",
+                            "Device.udiCarrier.deviceIdentifier");
+                    }
 
-                device.UdiCarrier.Add(udiCarrierComponent);
+                    device.UdiCarrier.Add(udiCarrierComponent);
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
             }
 
             var deviceComponentsXPath = "../../n1:entryRelationship/n1:organizer/n1:component/n1:observation";
-            var deviceComponents = element.XPathSelectElements(deviceComponentsXPath, namespaceManager);
+            var deviceComponents = element.XPathSelectElements(deviceComponentsXPath, context.NamespaceManager);
 
             foreach (var component in deviceComponents)
             {
@@ -127,35 +144,42 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (valueEl == null)
                     continue;
 
-                switch (code)
+                try
                 {
-                    case "C101669":
-                        if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.manufactureDate") is FhirDateTime manufactureDateTime)
-                            device.ManufactureDateElement = manufactureDateTime;
+                    switch (code)
+                    {
+                        case "C101669":
+                            if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.manufactureDate") is FhirDateTime manufactureDateTime)
+                                device.ManufactureDateElement = manufactureDateTime;
 
-                        break;
-                    case "C101670":
-                        if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.expirationDate") is FhirDateTime expirationDateTime)
-                            device.ExpirationDateElement = expirationDateTime;
+                            break;
+                        case "C101670":
+                            if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.expirationDate") is FhirDateTime expirationDateTime)
+                                device.ExpirationDateElement = expirationDateTime;
 
-                        break;
-                    case "C101671":
-                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.serialNumber") is FhirString serialNumber)
-                            device.SerialNumber = serialNumber.Value;
+                            break;
+                        case "C101671":
+                            if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.serialNumber") is FhirString serialNumber)
+                                device.SerialNumber = serialNumber.Value;
 
-                        break;
-                    case "C101672":
-                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.lotNumber") is FhirString lotNumber)
-                            device.LotNumber = lotNumber.Value;
+                            break;
+                        case "C101672":
+                            if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.lotNumber") is FhirString lotNumber)
+                                device.LotNumber = lotNumber.Value;
 
-                        break;
-                    case "C113843":
-                        if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.distinctIdentifier") is FhirString distinctIdentifier)
-                            device.DistinctIdentifier = distinctIdentifier.Value;
+                            break;
+                        case "C113843":
+                            if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.distinctIdentifier") is FhirString distinctIdentifier)
+                                device.DistinctIdentifier = distinctIdentifier.Value;
 
-                        break;
-                    default:
-                        continue;
+                            break;
+                        default:
+                            continue;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
                 }
             }
 
@@ -177,8 +201,21 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     "Device.lotNumber, " +
                     "Device.distinctIdentifier";
 
-                throw new RequiredValueNotFoundException(element.Parent.Parent, xPathToRequired, fhirPropertyPaths);
+                try
+                {
+                    throw new RequiredValueNotFoundException(element.Parent.Parent, xPathToRequired, fhirPropertyPaths);
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
+
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{id}",
+                Resource = device
+            });
 
             return device;
         }

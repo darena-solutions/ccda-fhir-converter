@@ -33,11 +33,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var practitioner = new Practitioner
@@ -51,57 +47,108 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                var identifier = identifierElement.ToIdentifier(true, "Practitioner.identifier");
-                var cacheKey = $"{ResourceType.Practitioner}|{identifier.System}|{identifier.Value}";
-                if (cache.TryGetValue(cacheKey, out var resource))
-                    return resource;
+                try
+                {
+                    var identifier = identifierElement.ToIdentifier(true, "Practitioner.identifier");
+                    var cacheKey = $"{ResourceType.Practitioner}|{identifier.System}|{identifier.Value}";
+                    if (context.Cache.TryGetValue(cacheKey, out var resource))
+                        return resource;
 
-                practitioner.Identifier.Add(identifier);
-                cache.Add(cacheKey, practitioner);
+                    practitioner.Identifier.Add(identifier);
+                    context.Cache.Add(cacheKey, practitioner);
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
             if (!practitioner.Identifier.Any())
-                throw new RequiredValueNotFoundException(element, "id", "Practitioner.identifier");
-
-            var nameElements = element
-                .Element(Defaults.DefaultNs + "assignedPerson")?
-                .Elements(Defaults.DefaultNs + "name")
-                .ToList();
-
-            if (nameElements == null || !nameElements.Any())
-                throw new RequiredValueNotFoundException(element, "assignedPerson/name", "Practitioner.name");
-
-            foreach (var nameElement in nameElements)
             {
-                var humanName = nameElement.ToHumanName("Practitioner.name");
-                if (string.IsNullOrWhiteSpace(humanName.Family))
-                    throw new RequiredValueNotFoundException(nameElement, "family", "Practitioner.name.family");
+                try
+                {
+                    throw new RequiredValueNotFoundException(element, "id", "Practitioner.identifier");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+            }
 
-                practitioner.Name.Add(humanName);
+            try
+            {
+                var nameElements = element
+                    .Element(Defaults.DefaultNs + "assignedPerson")?
+                    .Elements(Defaults.DefaultNs + "name")
+                    .ToList();
+
+                if (nameElements == null || !nameElements.Any())
+                    throw new RequiredValueNotFoundException(element, "assignedPerson/name", "Practitioner.name");
+
+                foreach (var nameElement in nameElements)
+                {
+                    try
+                    {
+                        var humanName = nameElement.ToHumanName("Practitioner.name");
+                        if (string.IsNullOrWhiteSpace(humanName.Family))
+                            throw new RequiredValueNotFoundException(nameElement, "family", "Practitioner.name.family");
+
+                        practitioner.Name.Add(humanName);
+                    }
+                    catch (Exception exception)
+                    {
+                        context.Exceptions.Add(exception);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
             }
 
             var addressElements = element.Elements(Defaults.DefaultNs + "addr");
             foreach (var addressElement in addressElements)
             {
-                practitioner.Address.Add(addressElement.ToAddress("Practitioner.address"));
+                try
+                {
+                    practitioner.Address.Add(addressElement.ToAddress("Practitioner.address"));
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
             var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecomElement in telecomElements)
             {
-                practitioner.Telecom.Add(telecomElement.ToContactPoint("Practitioner.telecom"));
+                try
+                {
+                    practitioner.Telecom.Add(telecomElement.ToContactPoint("Practitioner.telecom"));
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
             var qualificationCodes = element.Elements(Defaults.DefaultNs + "code");
             foreach (var qualificationCode in qualificationCodes)
             {
-                practitioner.Qualification.Add(new Practitioner.QualificationComponent
+                try
                 {
-                    Code = qualificationCode.ToCodeableConcept("Practitioner.qualification.code")
-                });
+                    practitioner.Qualification.Add(new Practitioner.QualificationComponent
+                    {
+                        Code = qualificationCode.ToCodeableConcept("Practitioner.qualification.code")
+                    });
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = practitioner

@@ -30,27 +30,17 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// these elements. The method, <see cref="GetPrimaryElements"/>, is called in this overload which will then lead
         /// to <see cref="PerformElementConversion"/> being called for each element
         /// </remarks>
-        public virtual List<Resource> AddToBundle(
-            Bundle bundle,
-            XDocument cCda,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        public virtual List<Resource> AddToBundle(XDocument cCda, ConversionContext context)
         {
             var resources = new List<Resource>();
 
-            var elements = GetPrimaryElements(cCda, namespaceManager);
+            var elements = GetPrimaryElements(cCda, context.NamespaceManager);
             foreach (var element in elements)
             {
                 if (element == null)
                     continue;
 
-                var resource = PerformElementConversion(
-                    bundle,
-                    element,
-                    namespaceManager,
-                    cache);
-
-                resources.Add(resource);
+                resources.Add(PerformElementConversion(element, context));
             }
 
             return resources;
@@ -62,11 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// need to perform finding elements. In this overload, <see cref="GetPrimaryElements"/> IS NOT called and is skipped.
         /// For each element, <see cref="PerformElementConversion"/> will be called
         /// </remarks>
-        public virtual List<Resource> AddToBundle(
-            Bundle bundle,
-            IEnumerable<XElement> elements,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        public virtual List<Resource> AddToBundle(IEnumerable<XElement> elements, ConversionContext context)
         {
             var resources = new List<Resource>();
 
@@ -75,13 +61,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (element == null)
                     continue;
 
-                var resource = PerformElementConversion(
-                    bundle,
-                    element,
-                    namespaceManager,
-                    cache);
-
-                resources.Add(resource);
+                resources.Add(PerformElementConversion(element, context));
             }
 
             return resources;
@@ -101,16 +81,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// This method is called for each iteration of an element. This is the method that should perform actual conversion
         /// from a CCDA element to a FHIR resource
         /// </summary>
-        /// <param name="bundle">The bundle to add the converted resource to as an entry</param>
         /// <param name="element">The element to convert</param>
-        /// <param name="namespaceManager">A namespace manager that can be used to further navigate the element</param>
-        /// <param name="cache">A cache that can be used to determine if a particular resource has already been converted
-        /// and added to the bundle. It is up to each implementation to add entries to this cache.</param>
+        /// <param name="context">The conversion context that contains necessary data to perform conversion</param>
         /// <returns>The resource that was converted and added to the bundle</returns>
-        protected abstract Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache);
+        protected abstract Resource PerformElementConversion(XElement element, ConversionContext context);
     }
 }

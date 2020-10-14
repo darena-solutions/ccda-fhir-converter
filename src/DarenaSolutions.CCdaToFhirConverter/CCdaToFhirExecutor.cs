@@ -103,28 +103,19 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (!_converterTypes.Any())
                 throw new InvalidOperationException("There are no converters in the collection");
 
-            var cache = new Dictionary<string, Resource>();
             var bundle = new Bundle
             {
                 Type = Bundle.BundleType.Collection,
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            var organization = _organizationConverter.AddToBundle(
-                bundle,
-                cCda,
-                _namespaceManager,
-                cache);
+            var context = new ConversionContext(bundle, _namespaceManager);
+            var organization = _organizationConverter.AddToBundle(cCda, context);
 
             if (organization?.ResourceType != ResourceType.Organization)
                 throw new InvalidOperationException("The organization converter did not produce an organization resource");
 
-            var patientConverterResult = _patientConverter.AddToBundle(
-                bundle,
-                cCda,
-                _namespaceManager,
-                cache);
-
+            var patientConverterResult = _patientConverter.AddToBundle(cCda, context);
             if (patientConverterResult?.ResourceType != ResourceType.Patient)
                 throw new InvalidOperationException("The patient converter did not produce a patient resource");
 
@@ -139,12 +130,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 else
                     instance = (BaseConverter)Activator.CreateInstance(entry.Key, patient.Id);
 
-                instance.AddToBundle(
-                    bundle,
-                    cCda,
-                    _namespaceManager,
-                    cache);
+                try
+                {
+                    instance.AddToBundle(cCda, context);
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
+
+            if (context.Exceptions.Any())
+                throw new AggregateException(context.Exceptions);
 
             return bundle;
         }

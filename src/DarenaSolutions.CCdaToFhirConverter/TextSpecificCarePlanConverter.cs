@@ -36,11 +36,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var carePlan = new CarePlan
@@ -54,29 +50,43 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             carePlan.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-careplan"));
 
-            var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
-            if (string.IsNullOrWhiteSpace(textEl))
-                throw new RequiredValueNotFoundException(element, "text", "CarePlan.text.div");
-
-            carePlan.Text = new Narrative
+            try
             {
-                Div = textEl,
-                Status = Narrative.NarrativeStatus.Generated
-            };
+                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
+                if (string.IsNullOrWhiteSpace(textEl))
+                    throw new RequiredValueNotFoundException(element, "text", "CarePlan.text.div");
+
+                carePlan.Text = new Narrative
+                {
+                    Div = textEl,
+                    Status = Narrative.NarrativeStatus.Generated
+                };
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             carePlan.Category.Add(new CodeableConcept(
                 "http://hl7.org/fhir/us/core/CodeSystem/careplan-category",
                 "assess-plan"));
 
-            var codeableConcept = element
-                .FindCodeElementWithTranslation()?
-                .ToCodeableConcept("CarePlan.category");
+            try
+            {
+                var codeableConcept = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept("CarePlan.category");
 
-            if (codeableConcept != null)
-                carePlan.Category.Add(codeableConcept);
+                if (codeableConcept != null)
+                    carePlan.Category.Add(codeableConcept);
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             // Commit Resource
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = carePlan

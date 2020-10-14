@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -31,29 +32,33 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
-            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
+            var condition = (Condition)base.PerformElementConversion(element, context);
 
-            // Get the value from the observation element
-            var xPath = "../../n1:entry/n1:observation/n1:value";
-            var valueEl = element
-                .XPathSelectElement(xPath, namespaceManager)?
-                .ToFhirElementBasedOnType(new[] { "co", "cd" }, "Condition.code");
-
-            if (valueEl == null)
+            try
             {
-                throw new RequiredValueNotFoundException(
-                    element,
-                    "../../entry/observation/value",
-                    "Condition.code");
+                // Get the value from the observation element
+                var xPath = "../../n1:entry/n1:observation/n1:value";
+                var valueEl = element
+                    .XPathSelectElement(xPath, context.NamespaceManager)?
+                    .ToFhirElementBasedOnType(new[] { "co", "cd" }, "Condition.code");
+
+                if (valueEl == null)
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "../../entry/observation/value",
+                        "Condition.code");
+                }
+
+                condition.Code = (CodeableConcept)valueEl;
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
             }
 
-            condition.Code = (CodeableConcept)valueEl;
             condition.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/condition-category",
                 "health-concern",

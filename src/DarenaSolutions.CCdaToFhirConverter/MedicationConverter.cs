@@ -32,11 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var medication = new Medication
@@ -46,14 +42,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
-            medication.Code = element
-                .Element(Defaults.DefaultNs + "code")?
-                .ToCodeableConcept("Medication.code");
 
-            if (medication.Code == null)
-                throw new RequiredValueNotFoundException(element, "code", "Medication.code");
+            try
+            {
+                medication.Code = element
+                    .Element(Defaults.DefaultNs + "code")?
+                    .ToCodeableConcept("Medication.code");
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+                if (medication.Code == null)
+                    throw new RequiredValueNotFoundException(element, "code", "Medication.code");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = medication

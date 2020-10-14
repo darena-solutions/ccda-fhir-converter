@@ -32,11 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var immunization = new Immunization
@@ -64,25 +60,39 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 ? Immunization.ImmunizationStatusCodes.Completed
                 : Immunization.ImmunizationStatusCodes.NotDone;
 
-            immunization.Occurrence = element
-                .Element(Defaults.DefaultNs + "effectiveTime")?
-                .ToFhirDateTime();
-
-            if (immunization.Occurrence == null)
+            try
             {
-                throw new RequiredValueNotFoundException(
-                    element,
-                    "effectiveTime",
-                    "Immunization.occurrence");
+                immunization.Occurrence = element
+                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .ToFhirDateTime();
+
+                if (immunization.Occurrence == null)
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "effectiveTime",
+                        "Immunization.occurrence");
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
             }
 
             var manufacturedMaterialXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
-            var manufacturedMaterialEl = element.XPathSelectElement(manufacturedMaterialXPath, namespaceManager);
+            var manufacturedMaterialEl = element.XPathSelectElement(manufacturedMaterialXPath, context.NamespaceManager);
             if (manufacturedMaterialEl != null)
             {
-                immunization.VaccineCode = manufacturedMaterialEl
-                    .Element(Defaults.DefaultNs + "code")?
-                    .ToCodeableConcept("Immunization.vaccineCode");
+                try
+                {
+                    immunization.VaccineCode = manufacturedMaterialEl
+                        .Element(Defaults.DefaultNs + "code")?
+                        .ToCodeableConcept("Immunization.vaccineCode");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
 
                 immunization.LotNumber = manufacturedMaterialEl
                     .Element(Defaults.DefaultNs + "lotNumberText")?
@@ -91,18 +101,32 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             if (immunization.VaccineCode == null)
             {
-                throw new RequiredValueNotFoundException(
-                    element,
-                    "consumable/manufacturedProduct/manufacturedMaterial/code",
-                    "Immunization.vaccineCode");
+                try
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "consumable/manufacturedProduct/manufacturedMaterial/code",
+                        "Immunization.vaccineCode");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
-            var statusReasonCodeXPath = "n1:entryRelationship/n1:observation/n1:code";
-            immunization.StatusReason = element
-                .XPathSelectElement(statusReasonCodeXPath, namespaceManager)?
-                .ToCodeableConcept("Immunization.statusReason");
+            try
+            {
+                var statusReasonCodeXPath = "n1:entryRelationship/n1:observation/n1:code";
+                immunization.StatusReason = element
+                    .XPathSelectElement(statusReasonCodeXPath, context.NamespaceManager)?
+                    .ToCodeableConcept("Immunization.statusReason");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = immunization

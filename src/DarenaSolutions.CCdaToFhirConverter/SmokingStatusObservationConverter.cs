@@ -32,26 +32,29 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
-            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cache);
+            var observation = (Observation)base.PerformElementConversion(element, context);
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-smokingstatus"));
 
-            if (observation.Value == null)
-                throw new RequiredValueNotFoundException(element, "value", "Observation.value");
-
-            var valueEl = element.Element(Defaults.DefaultNs + "value");
-            if (!(observation.Value is CodeableConcept))
+            try
             {
-                throw new UnexpectedValueTypeException(
-                    valueEl,
-                    valueEl.Attribute(Defaults.XsiNs + "type").Value,
-                    "Observation.value");
+                if (observation.Value == null)
+                    throw new RequiredValueNotFoundException(element, "value", "Observation.value");
+
+                var valueEl = element.Element(Defaults.DefaultNs + "value");
+                if (!(observation.Value is CodeableConcept))
+                {
+                    throw new UnexpectedValueTypeException(
+                        valueEl,
+                        valueEl.Attribute(Defaults.XsiNs + "type").Value,
+                        "Observation.value");
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
             }
 
             observation
@@ -62,7 +65,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Code = "social-history";
 
             if (observation.Effective == null)
-                throw new RequiredValueNotFoundException(element, "effectiveTime", "Observation.effective");
+            {
+                try
+                {
+                    throw new RequiredValueNotFoundException(element, "effectiveTime", "Observation.effective");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+            }
 
             if (observation.Effective is FhirDateTime dateTimeElement)
                 observation.Issued = dateTimeElement.ToDateTimeOffset(TimeSpan.Zero);

@@ -33,11 +33,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var medicationStatement = new MedicationStatement
@@ -57,39 +53,53 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 .Element(Defaults.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            try
+            {
+                var medicationXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
+                var medicationEl = element.XPathSelectElement(medicationXPath, context.NamespaceManager);
+                if (medicationEl == null)
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "consumable/manufacturedProduct/manufacturedMaterial",
+                        "MedicationStatement.medication");
+                }
+
+                var medicationConverter = new MedicationConverter(PatientId);
+                var medication = medicationConverter
+                    .AddToBundle(new List<XElement> { medicationEl }, context)
+                    .First();
+
+                medicationStatement.Medication = new ResourceReference($"urn:uuid:{medication.Id}");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            try
+            {
+                var authorEl = element.Element(Defaults.DefaultNs + "author");
+                if (authorEl != null)
+                {
+                    var provenanceConverter = new ProvenanceConverter(PatientId);
+                    var provenance = provenanceConverter
+                        .AddToBundle(new List<XElement> { authorEl }, context)
+                        .GetFirstResourceAsType<Provenance>();
+
+                    provenance.Target.Add(new ResourceReference($"urn:uuid:{id}"));
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = medicationStatement
             });
-
-            var medicationXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
-            var medicationEl = element.XPathSelectElement(medicationXPath, namespaceManager);
-            if (medicationEl == null)
-            {
-                throw new RequiredValueNotFoundException(
-                    element,
-                    "consumable/manufacturedProduct/manufacturedMaterial",
-                    "MedicationStatement.medication");
-            }
-
-            var medicationConverter = new MedicationConverter(PatientId);
-            var medication = medicationConverter
-                .AddToBundle(bundle, new List<XElement> { medicationEl }, namespaceManager, cache)
-                .First();
-
-            medicationStatement.Medication = new ResourceReference($"urn:uuid:{medication.Id}");
-
-            var authorEl = element.Element(Defaults.DefaultNs + "author");
-            if (authorEl != null)
-            {
-                var provenanceConverter = new ProvenanceConverter(PatientId);
-                var provenance = provenanceConverter
-                    .AddToBundle(bundle, new List<XElement> { authorEl }, namespaceManager, cache)
-                    .GetFirstResourceAsType<Provenance>();
-
-                provenance.Target.Add(new ResourceReference($"urn:uuid:{id}"));
-            }
 
             return medicationStatement;
         }

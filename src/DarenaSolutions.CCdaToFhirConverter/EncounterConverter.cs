@@ -31,11 +31,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             // Encounter
             var id = Guid.NewGuid().ToString();
@@ -55,85 +51,115 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                encounter.Identifier.Add(identifierElement.ToIdentifier(true, "Encounter.identifier"));
+                try
+                {
+                    encounter.Identifier.Add(identifierElement.ToIdentifier(true, "Encounter.identifier"));
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
-            // Class - Override when found
-            var translationCode = element
-                .FindCodeElementWithTranslation(translationOnly: true)?
-                .ToCodeableConcept("Encounter.class");
-            if (translationCode?.Coding?.Count > 0)
-                encounter.Class = new Coding(translationCode.Coding[0].System, translationCode.Coding[0].Code);
+            try
+            {
+                // Class - Override when found
+                var translationCode = element
+                    .FindCodeElementWithTranslation(translationOnly: true)?
+                    .ToCodeableConcept("Encounter.class");
+                if (translationCode?.Coding?.Count > 0)
+                    encounter.Class = new Coding(translationCode.Coding[0].System, translationCode.Coding[0].Code);
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
-            // Type - CPT Code
-            var encounterCode = element.ToCodeableConcept("Encounter.type");
-            encounter.Type.Add(encounterCode);
+            try
+            {
+                // Type - CPT Code
+                var encounterCode = element.ToCodeableConcept("Encounter.type");
+                encounter.Type.Add(encounterCode);
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             // Period
             var effectiveTimeElement =
                 element.Element(Defaults.DefaultNs + "effectiveTime");
             encounter.Period = effectiveTimeElement?.ToPeriod();
 
-            // Diagnoses
-            var encounterDiagnosisElements =
-                element.XPathSelectElements("n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation", namespaceManager);
-            var encounterDiagnosesConverter = new EncounterDiagnosesConditionConverter(PatientId);
-            var encounterDiagnoses = encounterDiagnosesConverter.AddToBundle(
-                bundle,
-                encounterDiagnosisElements,
-                namespaceManager,
-                cache);
-
-            if (encounterDiagnoses.Count > 0)
+            try
             {
-                foreach (var condition in encounterDiagnoses)
+                // Diagnoses
+                var encounterDiagnosisElements =
+                    element.XPathSelectElements("n1:entryRelationship/n1:act/n1:entryRelationship/n1:observation", context.NamespaceManager);
+                var encounterDiagnosesConverter = new EncounterDiagnosesConditionConverter(PatientId);
+                var encounterDiagnoses = encounterDiagnosesConverter.AddToBundle(encounterDiagnosisElements, context);
+
+                if (encounterDiagnoses.Count > 0)
                 {
-                    encounter.Diagnosis.Add(new Encounter.DiagnosisComponent
+                    foreach (var condition in encounterDiagnoses)
                     {
-                        Condition = new ResourceReference($"urn:uuid:{condition.Id}")
+                        encounter.Diagnosis.Add(new Encounter.DiagnosisComponent
+                        {
+                            Condition = new ResourceReference($"urn:uuid:{condition.Id}")
+                        });
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            try
+            {
+                // Practitioner - Author
+                var practitionerElements =
+                    element.XPathSelectElements("/n1:ClinicalDocument/n1:author/n1:assignedAuthor", context.NamespaceManager);
+
+                var practitionerConverter = new PractitionerConverter(PatientId);
+                var practitioners = practitionerConverter.AddToBundle(practitionerElements, context);
+
+                if (practitioners.Count > 0)
+                {
+                    encounter.Participant.Add(new Encounter.ParticipantComponent
+                    {
+                        Individual = new ResourceReference($"urn:uuid:{practitioners[0].Id}")
                     });
                 }
             }
-
-            // Practitioner - Author
-            var practitionerElements =
-                element.XPathSelectElements("/n1:ClinicalDocument/n1:author/n1:assignedAuthor", namespaceManager);
-
-            var practitionerConverter = new PractitionerConverter(PatientId);
-            var practitioners = practitionerConverter.AddToBundle(
-                bundle,
-                practitionerElements,
-                namespaceManager,
-                cache);
-
-            if (practitioners.Count > 0)
+            catch (Exception exception)
             {
-                encounter.Participant.Add(new Encounter.ParticipantComponent
-                {
-                    Individual = new ResourceReference($"urn:uuid:{practitioners[0].Id}")
-                });
+                context.Exceptions.Add(exception);
             }
 
-            // Location - Healthcare Facility
-            var locationElements =
-                element.XPathSelectElements("/n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:location/n1:healthCareFacility", namespaceManager);
-
-            var locationConverter = new LocationConverter(PatientId);
-            var locations = locationConverter.AddToBundle(
-                bundle,
-                locationElements,
-                namespaceManager,
-                cache);
-
-            if (locations.Count > 0)
+            try
             {
-                encounter.Location.Add(new Encounter.LocationComponent()
+                // Location - Healthcare Facility
+                var locationElements =
+                    element.XPathSelectElements("/n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:location/n1:healthCareFacility", context.NamespaceManager);
+
+                var locationConverter = new LocationConverter(PatientId);
+                var locations = locationConverter.AddToBundle(locationElements, context);
+
+                if (locations.Count > 0)
                 {
-                    Location = new ResourceReference($"urn:uuid:{locations[0].Id}")
-                });
+                    encounter.Location.Add(new Encounter.LocationComponent()
+                    {
+                        Location = new ResourceReference($"urn:uuid:{locations[0].Id}")
+                    });
+                }
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
             }
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{encounter.Id}",
                 Resource = encounter

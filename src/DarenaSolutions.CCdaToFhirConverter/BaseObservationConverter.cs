@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
@@ -24,11 +23,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var observation = new Observation
@@ -60,24 +55,38 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             observation.Category.Add(codeConcept);
 
-            // Code
-            observation.Code = element
-                .FindCodeElementWithTranslation()?
-                .ToCodeableConcept("Observation.code");
+            try
+            {
+                // Code
+                observation.Code = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept("Observation.code");
 
-            if (observation.Code == null)
-                throw new RequiredValueNotFoundException(element, "code", "Observation.code");
+                if (observation.Code == null)
+                    throw new RequiredValueNotFoundException(element, "code", "Observation.code");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             observation.Effective = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
-            observation.Value = element
-                .Element(Defaults.DefaultNs + "value")?
-                .ToFhirElementBasedOnType(fhirPropertyPath: "Observation.value");
+            try
+            {
+                observation.Value = element
+                    .Element(Defaults.DefaultNs + "value")?
+                    .ToFhirElementBasedOnType(fhirPropertyPath: "Observation.value");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             // Commit Resource
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = observation

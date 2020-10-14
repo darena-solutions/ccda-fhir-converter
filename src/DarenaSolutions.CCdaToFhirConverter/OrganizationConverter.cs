@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -23,11 +22,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var organization = new Organization
@@ -39,7 +34,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             if (string.IsNullOrWhiteSpace(organization.Name))
-                throw new RequiredValueNotFoundException(element, "name", "Organization.name");
+            {
+                try
+                {
+                    throw new RequiredValueNotFoundException(element, "name", "Organization.name");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+            }
 
             organization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-organization"));
 
@@ -48,36 +52,50 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var identifier = identifierElement.ToIdentifier();
                 var cacheKey = $"{ResourceType.Organization}|{identifier.System}|{identifier.Value}";
-                if (cache.TryGetValue(cacheKey, out var resource))
+                if (context.Cache.TryGetValue(cacheKey, out var resource))
                     return resource;
 
                 organization.Identifier.Add(identifier);
-                cache.Add(cacheKey, organization);
+                context.Cache.Add(cacheKey, organization);
             }
 
             var telecoms = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecom in telecoms)
             {
-                organization.Telecom.Add(telecom.ToContactPoint("Organization.telecom"));
+                try
+                {
+                    organization.Telecom.Add(telecom.ToContactPoint("Organization.telecom"));
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
             var addressElements = element.Elements(Defaults.DefaultNs + "addr");
             foreach (var addressElement in addressElements)
             {
-                var address = addressElement.ToAddress("Organization.address");
-                if (address.LineElement.Count > 4)
+                try
                 {
-                    throw new ProfileRelatedException(
-                        addressElement,
-                        "More than 4 address lines were provided",
-                        "streetAddressLine",
-                        "Organization.address.line");
-                }
+                    var address = addressElement.ToAddress("Organization.address");
+                    if (address.LineElement.Count > 4)
+                    {
+                        throw new ProfileRelatedException(
+                            addressElement,
+                            "More than 4 address lines were provided",
+                            "streetAddressLine",
+                            "Organization.address.line");
+                    }
 
-                organization.Address.Add(address);
+                    organization.Address.Add(address);
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = organization
