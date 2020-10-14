@@ -80,11 +80,7 @@ public class MyConverter : BaseConverter
         return cCda.XPathSelectElements(xPath, namespaceManager);
     }
 
-    protected override Resource PerformElementConversion(
-        Bundle bundle,
-        XElement element,
-        XmlNamespaceManager namespaceManager,
-        Dictionary<string, Resource> cache)
+    protected override Resource PerformElementConversion(XElement element, ConversionContext context)
     {
         // Here you perform the actual conversion to the FHIR resource
         var myResource = new Basic
@@ -98,7 +94,7 @@ public class MyConverter : BaseConverter
         // .ToCodeableConcept above is an extension method. There are a lot of helpful extension methods
         // in XElementExtensions, have a look!
 
-        bundle.Entry.Add(new Bundle.EntryComponent
+        context.Bundle.Entry.Add(new Bundle.EntryComponent
         {
             FullUrl = $"urn:uuid:{myResource.Id}",
             Resource = myResource
@@ -112,6 +108,49 @@ public class MyConverter : BaseConverter
 The `PerformElementConversion` is an abstract method which means that any derived converter can override the default
 behaviour. This is true for all of the default converters in this library. If the conversion doesn't satisfy a use-case,
 you can override the method and implement your own conversion.
+
+## Converter Exceptions
+It is recommended that all converters create exceptions when an issue occurs during mapping. These exceptions should then
+be added to the `ConversionContext.Exceptions` collection. This way a collection of all issues can be returned to the
+caller instead of having to run into and fix an issue one-by-one. The executor will take the list of collections and throw
+an `AggregateException` once all converters have completed processing. Here's an example:
+
+```csharp
+protected override Resource PerformElementConversion(XElement element, ConversionContext context)
+{
+    // Here you perform the actual conversion to the FHIR resource
+    var myResource = new Basic
+    {
+        Id = Guid.NewGuid().ToString()
+    };
+
+    // Let's assume the code element is required
+    try
+    {
+        myResource.Code = element
+            .Element(Defaults.DefaultNs + "someElement")?
+            .ToCodeableConcept();
+        // .ToCodeableConcept above is an extension method. There are a lot of helpful extension methods
+        // in XElementExtensions, have a look!
+
+        if (myResource.Code == null)
+            throw new RequiredValueNotFoundException();
+    }
+    catch (Exception exception)
+    {
+        // Add the exception to the collection without throwing it
+        context.Exceptions(exception);
+    }
+
+    context.Bundle.Entry.Add(new Bundle.EntryComponent
+    {
+        FullUrl = $"urn:uuid:{myResource.Id}",
+        Resource = myResource
+    });
+
+    return myResource;
+}
+```
 
 ## Executor
 All converters must be added to the executor, which maintains a collection of these converters. When you create an instance

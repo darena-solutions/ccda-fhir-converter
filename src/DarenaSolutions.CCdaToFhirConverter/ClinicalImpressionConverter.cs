@@ -32,11 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var clinicalImpression = new ClinicalImpression
@@ -46,21 +42,36 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
-            var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
-            if (string.IsNullOrWhiteSpace(textEl))
-                throw new RequiredValueNotFoundException(element, "text", "ClinicalImpression.note.text");
-
-            clinicalImpression.Note.Add(new Annotation
+            try
             {
-                Text = new Markdown(textEl)
-            });
+                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
+                if (string.IsNullOrWhiteSpace(textEl))
+                    throw new RequiredValueNotFoundException(element, "text", "ClinicalImpression.note.text");
+
+                clinicalImpression.Note.Add(new Annotation
+                {
+                    Text = new Markdown(textEl)
+                });
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             clinicalImpression.DateElement = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToFhirDateTime();
-            clinicalImpression.Code = element
-                .FindCodeElementWithTranslation()?
-                .ToCodeableConcept("ClinicalImpression.code");
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            try
+            {
+                clinicalImpression.Code = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept("ClinicalImpression.code");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = clinicalImpression

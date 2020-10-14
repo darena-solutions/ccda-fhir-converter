@@ -32,11 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var procedure = new Procedure
@@ -55,25 +51,33 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 procedure.Identifier.Add(identifierElement.ToIdentifier());
             }
 
-            procedure.Code = element
-                .FindCodeElementWithTranslation()?
-                .ToCodeableConcept("Procedure.code");
-
-            if (procedure.Code == null)
-                throw new RequiredValueNotFoundException(element, "code", "Procedure.code");
-
-            procedure.Performed = element
-                .Element(Defaults.DefaultNs + "effectiveTime")?
-                .ToDateTimeElement();
-
-            if (procedure.Performed == null)
-                throw new RequiredValueNotFoundException(element, "effectiveTime", "Procedure.performed");
-
-            bundle.Entry.Add(new Bundle.EntryComponent
+            try
             {
-                FullUrl = $"urn:uuid:{id}",
-                Resource = procedure
-            });
+                procedure.Code = element
+                    .FindCodeElementWithTranslation()?
+                    .ToCodeableConcept("Procedure.code");
+
+                if (procedure.Code == null)
+                    throw new RequiredValueNotFoundException(element, "code", "Procedure.code");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            try
+            {
+                procedure.Performed = element
+                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .ToDateTimeElement();
+
+                if (procedure.Performed == null)
+                    throw new RequiredValueNotFoundException(element, "effectiveTime", "Procedure.performed");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             var participantRoleEl = element
                 .Element(Defaults.DefaultNs + "participant")?
@@ -81,13 +85,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             if (participantRoleEl != null)
             {
-                var deviceConverter = new DeviceConverter(PatientId);
-                deviceConverter.AddToBundle(
-                    bundle,
-                    new List<XElement> { participantRoleEl },
-                    namespaceManager,
-                    cache);
+                try
+                {
+                    var deviceConverter = new DeviceConverter(PatientId);
+                    deviceConverter.AddToBundle(new List<XElement> { participantRoleEl }, context);
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
+
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{id}",
+                Resource = procedure
+            });
 
             return procedure;
         }

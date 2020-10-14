@@ -32,11 +32,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var goal = new Goal
@@ -73,18 +69,25 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 goal.Start = dateTime.ToDate();
             }
 
-            var descriptionEl = element.Element(Defaults.DefaultNs + "value");
-            var description = descriptionEl?.ToFhirElementBasedOnType(new[] { "st" }, "Goal.description.text");
-
-            if (description == null)
-                throw new RequiredValueNotFoundException(element, "value", "Goal.description.text");
-
-            goal.Description = new CodeableConcept
+            try
             {
-                Text = ((FhirString)description).Value
-            };
+                var descriptionEl = element.Element(Defaults.DefaultNs + "value");
+                var description = descriptionEl?.ToFhirElementBasedOnType(new[] { "st" }, "Goal.description.text");
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+                if (description == null)
+                    throw new RequiredValueNotFoundException(element, "value", "Goal.description.text");
+
+                goal.Description = new CodeableConcept
+                {
+                    Text = ((FhirString)description).Value
+                };
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = goal

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
@@ -33,19 +34,23 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
-            var condition = (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
-            condition.Code = element
-                .FindCodeElementWithTranslation(codeElementName: "value")?
-                .ToCodeableConcept("Condition.code");
+            var condition = (Condition)base.PerformElementConversion(element, context);
 
-            if (condition.Code == null)
-                throw new RequiredValueNotFoundException(element, "value", "Condition.code");
+            try
+            {
+                condition.Code = element
+                    .FindCodeElementWithTranslation(codeElementName: "value")?
+                    .ToCodeableConcept("Condition.code");
+
+                if (condition.Code == null)
+                    throw new RequiredValueNotFoundException(element, "value", "Condition.code");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             condition.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/condition-category",
@@ -58,15 +63,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (authorElement == null)
                 return condition;
 
-            var provenanceConverter = new ProvenanceConverter(PatientId);
-            var provenanceResources = provenanceConverter.AddToBundle(
-                bundle,
-                new List<XElement> { authorElement },
-                namespaceManager,
-                cache);
+            try
+            {
+                var provenanceConverter = new ProvenanceConverter(PatientId);
+                var provenanceResources = provenanceConverter.AddToBundle(new List<XElement> { authorElement }, context);
 
-            var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
-            provenance.Target.Add(new ResourceReference($"{ResourceType.Condition}/{condition.Id}"));
+                var provenance = provenanceResources.GetFirstResourceAsType<Provenance>();
+                provenance.Target.Add(new ResourceReference($"{ResourceType.Condition}/{condition.Id}"));
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             return condition;
         }

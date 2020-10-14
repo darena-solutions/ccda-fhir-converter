@@ -32,32 +32,29 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
-            var condition =
-                (Condition)base.PerformElementConversion(bundle, element, namespaceManager, cache);
-            condition.Code = element
-                .FindCodeElementWithTranslation(codeElementName: "value")?
-                .ToCodeableConcept("Condition.code");
+            var condition = (Condition)base.PerformElementConversion(element, context);
 
-            if (condition.Code == null)
-                throw new RequiredValueNotFoundException(element, "value", "Condition.code");
+            try
+            {
+                condition.Code = element
+                    .FindCodeElementWithTranslation(codeElementName: "value")?
+                    .ToCodeableConcept("Condition.code");
+
+                if (condition.Code == null)
+                    throw new RequiredValueNotFoundException(element, "value", "Condition.code");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             condition.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/condition-category",
                 "encounter-diagnosis",
                 "Encounter Diagnosis",
                 null));
-
-            bundle.Entry.Add(new Bundle.EntryComponent
-            {
-                FullUrl = $"urn:uuid:{condition.Id}",
-                Resource = condition
-            });
 
             return condition;
         }

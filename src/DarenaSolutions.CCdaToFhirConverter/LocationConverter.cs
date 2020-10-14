@@ -34,11 +34,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var location = new Location()
@@ -52,37 +48,65 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var identifierElements = element.Elements(Defaults.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
-                var identifier = identifierElement.ToIdentifier(true, "Location.identifier");
-                var cacheKey = $"{ResourceType.Location}|{identifier.System}|{identifier.Value}";
-                if (cache.TryGetValue(cacheKey, out var resource))
-                    return resource;
+                try
+                {
+                    var identifier = identifierElement.ToIdentifier(true, "Location.identifier");
+                    var cacheKey = $"{ResourceType.Location}|{identifier.System}|{identifier.Value}";
+                    if (context.Cache.TryGetValue(cacheKey, out var resource))
+                        return resource;
 
-                location.Identifier.Add(identifier);
-                cache.Add(cacheKey, location);
+                    location.Identifier.Add(identifier);
+                    context.Cache.Add(cacheKey, location);
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
-            // Type - Code
-            var locationCode = element.ToCodeableConcept("Location.type");
-            location.Type.Add(locationCode);
+            try
+            {
+                // Type - Code
+                var locationCode = element.ToCodeableConcept("Location.type");
+                location.Type.Add(locationCode);
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
-            // Name
-            var nameElement = element
-                .Element(Defaults.DefaultNs + "location")?
-                .Elements(Defaults.DefaultNs + "name")
-                .FirstOrDefault();
+            try
+            {
+                // Name
+                var nameElement = element
+                    .Element(Defaults.DefaultNs + "location")?
+                    .Elements(Defaults.DefaultNs + "name")
+                    .FirstOrDefault();
 
-            if (nameElement == null)
-                throw new RequiredValueNotFoundException(element, "location/name", "Location.name");
+                if (nameElement == null)
+                    throw new RequiredValueNotFoundException(element, "location/name", "Location.name");
 
-            location.Name = nameElement.Value;
+                location.Name = nameElement.Value;
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
-            // Address
-            var addrXPath = "n1:location/n1:addr";
-            var addressElement = element.XPathSelectElements(addrXPath, namespaceManager).FirstOrDefault();
-            if (addressElement != null)
-                location.Address = addressElement.ToAddress("Location.address");
+            try
+            {
+                // Address
+                var addrXPath = "n1:location/n1:addr";
+                var addressElement = element.XPathSelectElements(addrXPath, context.NamespaceManager).FirstOrDefault();
+                if (addressElement != null)
+                    location.Address = addressElement.ToAddress("Location.address");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = location

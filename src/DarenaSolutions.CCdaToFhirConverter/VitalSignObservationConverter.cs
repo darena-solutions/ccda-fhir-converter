@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
@@ -30,18 +31,23 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
-            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cache);
+            var observation = (Observation)base.PerformElementConversion(element, context);
             observation.Meta = new Meta();
             observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
 
             if (observation.Effective == null)
-                throw new RequiredValueNotFoundException(element, "effectiveTime", "Observation.effective");
+            {
+                try
+                {
+                    throw new RequiredValueNotFoundException(element, "effectiveTime", "Observation.effective");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+            }
 
             observation
                 .Category

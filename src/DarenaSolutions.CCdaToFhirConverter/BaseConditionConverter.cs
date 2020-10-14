@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
@@ -23,11 +21,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var condition = new Condition
@@ -54,18 +48,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 var identifier = identifierElement.ToIdentifier();
                 var cacheKey = $"{ResourceType.Condition}|{identifier.System}|{identifier.Value}";
-                if (cache.TryGetValue(cacheKey, out var resource))
+                if (context.Cache.TryGetValue(cacheKey, out var resource))
                     return resource;
 
                 condition.Identifier.Add(identifier);
-                cache.Add(cacheKey, condition);
+                context.Cache.Add(cacheKey, condition);
             }
 
             condition.Onset = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
-            bundle.Entry.Add(new Bundle.EntryComponent
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
                 FullUrl = $"urn:uuid:{id}",
                 Resource = condition

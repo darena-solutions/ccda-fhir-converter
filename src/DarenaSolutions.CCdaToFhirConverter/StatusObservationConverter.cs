@@ -33,13 +33,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
-            var observation = (Observation)base.PerformElementConversion(bundle, element, namespaceManager, cache);
+            var observation = (Observation)base.PerformElementConversion(element, context);
             observation
                 .Category
                 .First()

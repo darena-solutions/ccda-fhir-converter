@@ -23,26 +23,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        public override List<Resource> AddToBundle(
-            Bundle bundle,
-            XDocument cCda,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        public override List<Resource> AddToBundle(XDocument cCda, ConversionContext context)
         {
-            var elements = GetPrimaryElements(cCda, namespaceManager);
-            return AddToBundle(
-                bundle,
-                elements,
-                namespaceManager,
-                cache);
+            var elements = GetPrimaryElements(cCda, context.NamespaceManager);
+            return AddToBundle(elements, context);
         }
 
         /// <inheritdoc />
-        public override List<Resource> AddToBundle(
-            Bundle bundle,
-            IEnumerable<XElement> elements,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        public override List<Resource> AddToBundle(IEnumerable<XElement> elements, ConversionContext context)
         {
             var id = Guid.NewGuid().ToString();
             var careTeam = new CareTeam
@@ -56,17 +44,25 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             foreach (var element in elements)
             {
-                var practitioner = PerformElementConversion(
-                    bundle,
-                    element,
-                    namespaceManager,
-                    cache);
-
-                careTeam.Participant.Add(new CareTeam.ParticipantComponent
+                try
                 {
-                    Member = new ResourceReference($"urn:uuid:{practitioner.Id}")
-                });
+                    var practitioner = PerformElementConversion(element, context);
+                    careTeam.Participant.Add(new CareTeam.ParticipantComponent
+                    {
+                        Member = new ResourceReference($"urn:uuid:{practitioner.Id}")
+                    });
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
+
+            context.Bundle.Entry.Add(new Bundle.EntryComponent
+            {
+                FullUrl = $"urn:uuid:{id}",
+                Resource = careTeam
+            });
 
             return new List<Resource> { careTeam };
         }
@@ -106,15 +102,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
         }
 
         /// <inheritdoc />
-        protected override Resource PerformElementConversion(
-            Bundle bundle,
-            XElement element,
-            XmlNamespaceManager namespaceManager,
-            Dictionary<string, Resource> cache)
+        protected override Resource PerformElementConversion(XElement element, ConversionContext context)
         {
             var practitionerConverter = new PractitionerConverter(PatientId);
             return practitionerConverter
-                .AddToBundle(bundle, new List<XElement> { element }, namespaceManager, cache)
+                .AddToBundle(new List<XElement> { element }, context)
                 .First();
         }
     }
