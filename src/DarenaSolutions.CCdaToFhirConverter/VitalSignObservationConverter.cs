@@ -8,6 +8,7 @@ using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
+using Exception = System.Exception;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
@@ -73,21 +74,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 case "59408-5":
                     var codeElement = element.FindCodeElementWithTranslation();
 
-                    if (string.IsNullOrWhiteSpace(codeCoding.System))
+                    try
                     {
-                        try
-                        {
+                        if (string.IsNullOrWhiteSpace(codeCoding.System))
                             throw new RequiredValueNotFoundException(codeElement, "[@codeSystem]", "Observation.code.coding.system");
-                        }
-                        catch (Exception exception)
-                        {
-                            context.Exceptions.Add(exception);
-                        }
-                    }
 
-                    if (codeCoding.System != "http://loinc.org")
-                    {
-                        try
+                        if (codeCoding.System != "http://loinc.org")
                         {
                             throw new UnrecognizedValueException(
                                 codeElement,
@@ -95,10 +87,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                 elementAttributeName: "codeSystem",
                                 fhirPropertyPath: "Observation.code.coding.system");
                         }
-                        catch (Exception exception)
-                        {
-                            context.Exceptions.Add(exception);
-                        }
+
+                    }
+                    catch (Exception exception)
+                    {
+                        context.Exceptions.Add(exception);
                     }
 
                     break;
