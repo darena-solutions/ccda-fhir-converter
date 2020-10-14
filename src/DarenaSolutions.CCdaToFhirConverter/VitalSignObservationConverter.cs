@@ -4,8 +4,11 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
+using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
+using Exception = System.Exception;
 
 namespace DarenaSolutions.CCdaToFhirConverter
 {
@@ -35,7 +38,104 @@ namespace DarenaSolutions.CCdaToFhirConverter
         {
             var observation = (Observation)base.PerformElementConversion(element, context);
             observation.Meta = new Meta();
-            observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
+
+            var codeCoding = observation.Code?.Coding?.FirstOrDefault();
+            switch (codeCoding?.Code)
+            {
+                case "59576-9":
+                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/pediatric-bmi-for-age"));
+                    break;
+                case "8289-1":
+                case "74728-7":
+                    // 74728-7 is a code EHR's sometimes use for circumference. Update the code to match profile
+                    codeCoding.Code = "8289-1";
+                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/head-occipital-frontal-circumference-percentile"));
+                    break;
+                case "77606-2":
+                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/pediatric-weight-for-height"));
+                    break;
+                case "59408-5":
+                case "2710-2":
+                    // 2710-2 is a deprecated code, but still valid. Update it to latest code
+                    codeCoding.Code = "59408-5";
+                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-pulse-oximetry"));
+                    break;
+                default:
+                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/StructureDefinition/vitalsigns"));
+                    break;
+            }
+
+            // Ensure correct system is being used for specific vital signs
+            switch (codeCoding?.Code)
+            {
+                case "59576-9":
+                case "8289-1":
+                case "77606-2":
+                case "59408-5":
+                    var codeElement = element.FindCodeElementWithTranslation();
+
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(codeCoding.System))
+                            throw new RequiredValueNotFoundException(codeElement, "[@codeSystem]", "Observation.code.coding.system");
+
+                        if (codeCoding.System != "http://loinc.org")
+                        {
+                            throw new UnrecognizedValueException(
+                                codeElement,
+                                codeCoding.System,
+                                elementAttributeName: "codeSystem",
+                                fhirPropertyPath: "Observation.code.coding.system");
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        context.Exceptions.Add(exception);
+                    }
+
+                    break;
+            }
+
+            // Pediatric codes have a specific value quantity requirement
+            switch (codeCoding?.Code)
+            {
+                case "59576-9":
+                case "8289-1":
+                case "77606-2":
+                    if (observation.Value is Quantity valueQuantity)
+                    {
+                        var valueElement = element.Element(Defaults.DefaultNs + "value");
+
+                        if (valueQuantity.Value == null)
+                        {
+                            try
+                            {
+                                throw new RequiredValueNotFoundException(valueElement, "[@value]", "Observation.valueQuantity.value");
+                            }
+                            catch (Exception exception)
+                            {
+                                context.Exceptions.Add(exception);
+                            }
+                        }
+
+                        if (string.IsNullOrWhiteSpace(valueQuantity.Unit))
+                        {
+                            try
+                            {
+                                throw new RequiredValueNotFoundException(valueElement, "[@unit]", "Observation.valueQuantity.unit");
+                            }
+                            catch (Exception exception)
+                            {
+                                context.Exceptions.Add(exception);
+                            }
+                        }
+
+                        valueQuantity.System = "http://unitsofmeasure.org";
+                        valueQuantity.Code = "%";
+                    }
+
+                    break;
+            }
 
             if (observation.Effective == null)
             {
