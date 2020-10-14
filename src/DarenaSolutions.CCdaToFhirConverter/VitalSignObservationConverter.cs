@@ -87,7 +87,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                 elementAttributeName: "codeSystem",
                                 fhirPropertyPath: "Observation.code.coding.system");
                         }
-
                     }
                     catch (Exception exception)
                     {
