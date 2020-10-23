@@ -78,11 +78,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 // Name
-                var nameElement = element
-                    .Element(Defaults.DefaultNs + "location")?
-                    .Elements(Defaults.DefaultNs + "name")
-                    .FirstOrDefault();
-
+                var nameElement = element.Elements(Defaults.DefaultNs + "name").FirstOrDefault();
                 if (nameElement == null)
                     throw new RequiredValueNotFoundException(element, "location/name", "Location.name");
 
@@ -96,7 +92,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 // Address
-                var addrXPath = "n1:location/n1:addr";
+                var addrXPath = "n1:addr";
                 var addressElement = element.XPathSelectElements(addrXPath, context.NamespaceManager).FirstOrDefault();
                 if (addressElement != null)
                     location.Address = addressElement.ToAddress("Location.address");
