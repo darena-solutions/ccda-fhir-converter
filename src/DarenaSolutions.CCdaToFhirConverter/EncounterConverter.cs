@@ -117,31 +117,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                // Practitioner - Author
-                var practitionerElements =
-                    element.XPathSelectElements("/n1:ClinicalDocument/n1:author/n1:assignedAuthor", context.NamespaceManager);
-
-                var practitionerConverter = new PractitionerConverter(PatientId);
-                var practitioners = practitionerConverter.AddToBundle(practitionerElements, context);
-
-                if (practitioners.Count > 0)
-                {
-                    encounter.Participant.Add(new Encounter.ParticipantComponent
-                    {
-                        Individual = new ResourceReference($"urn:uuid:{practitioners[0].Id}")
-                    });
-                }
-            }
-            catch (Exception exception)
-            {
-                context.Exceptions.Add(exception);
-            }
-
-            try
-            {
-                // Location - Healthcare Facility
+                // Location
                 var locationElements =
-                    element.XPathSelectElements("/n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:location/n1:healthCareFacility", context.NamespaceManager);
+                    element.XPathSelectElements(
+                        "/n1:ClinicalDocument/n1:documentationOf/n1:serviceEvent/n1:performer/n1:assignedEntity/n1:representedOrganization",
+                        context.NamespaceManager);
 
                 var locationConverter = new LocationConverter(PatientId);
                 var locations = locationConverter.AddToBundle(locationElements, context);
