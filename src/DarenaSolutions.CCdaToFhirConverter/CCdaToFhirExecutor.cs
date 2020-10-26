@@ -59,7 +59,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     .ReplaceConverter<TextSpecificCarePlanConverter>()
                     .ReplaceConverter<VitalSignObservationConverter>()
                     .ReplaceConverter<CareTeamConverter>()
-                    .ReplaceConverter<LaboratoryResultDiagnosticReportConverter>()                    
+                    .ReplaceConverter<LaboratoryResultDiagnosticReportConverter>()
                     .ReplaceConverter<MedicationRequestConverter>()
                     .ReplaceConverter<PractitionerRoleConverter>();
             }
