@@ -64,15 +64,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
             }
 
-            try
+            if (element.Attribute("code") != null)
             {
-                // Type - Code
-                var locationCode = element.ToCodeableConcept("Location.type");
-                location.Type.Add(locationCode);
-            }
-            catch (Exception exception)
-            {
-                context.Exceptions.Add(exception);
+                try
+                {
+                    // Type - Code
+                    var locationCode = element.ToCodeableConcept("Location.type");
+                    location.Type.Add(locationCode);
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
             }
 
             try

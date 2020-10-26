@@ -4,6 +4,7 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -46,11 +47,47 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 try
                 {
-                    var practitioner = PerformElementConversion(element, context);
-                    careTeam.Participant.Add(new CareTeam.ParticipantComponent
+                    var resource = PerformElementConversion(element, context);
+                    var participant = new CareTeam.ParticipantComponent
                     {
-                        Member = new ResourceReference($"urn:uuid:{practitioner.Id}")
-                    });
+                        Member = new ResourceReference($"urn:uuid:{resource.Id}")
+                    };
+
+                    try
+                    {
+                        var practitioner = (Practitioner)resource;
+                        if (practitioner.Qualification == null || !practitioner.Qualification.Any())
+                        {
+                            throw new RequiredValueNotFoundException(
+                                element,
+                                "code",
+                                "CareTeam.participant.role");
+                        }
+
+                        foreach (var qualification in practitioner.Qualification)
+                        {
+                            var coding = qualification.Code?.Coding?.FirstOrDefault();
+                            if (coding == null)
+                            {
+                                throw new RequiredValueNotFoundException(
+                                    element,
+                                    "code",
+                                    "CareTeam.participant.role");
+                            }
+
+                            participant.Role.Add(new CodeableConcept(
+                                coding.System,
+                                coding.Code,
+                                coding.Display,
+                                null));
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        context.Exceptions.Add(exception);
+                    }
+
+                    careTeam.Participant.Add(participant);
                 }
                 catch (Exception exception)
                 {
@@ -88,14 +125,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             elements = elements.Concat(cCda.XPathSelectElements(
                 "n1:ClinicalDocuments/n1:authenticator/n1:assignedEntity/n1:assignedPerson/..",
-                namespaceManager));
-
-            elements = elements.Concat(cCda.XPathSelectElements(
-                "n1:ClinicalDocument/n1:informationRecipient/n1:intendedRecipient/n1:informationRecipient/..",
-                namespaceManager));
-
-            elements = elements.Concat(cCda.XPathSelectElements(
-                "n1:ClinicalDocument/n1:participant/n1:associatedEntity/n1:associatedPerson/..",
                 namespaceManager));
 
             return elements;

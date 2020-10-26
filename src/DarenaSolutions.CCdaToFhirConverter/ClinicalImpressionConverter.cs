@@ -44,13 +44,31 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetFirstTextNode();
-                if (string.IsNullOrWhiteSpace(textEl))
+                var textEl = element.Element(Defaults.DefaultNs + "text");
+                var textReferenceEl = textEl?.Element(Defaults.DefaultNs + "reference");
+                if (textReferenceEl != null)
+                {
+                    var referenceId = textReferenceEl.Attribute("value")?.Value;
+                    if (!string.IsNullOrWhiteSpace(referenceId))
+                    {
+                        if (referenceId[0] == '#')
+                            referenceId = referenceId.Substring(1);
+
+                        var textXPath = $"../../n1:text//*[@ID='{referenceId}']";
+                        textEl = element.XPathSelectElement(textXPath, context.NamespaceManager);
+                    }
+                    else
+                    {
+                        textEl = null;
+                    }
+                }
+
+                if (textEl == null)
                     throw new RequiredValueNotFoundException(element, "text", "ClinicalImpression.note.text");
 
                 clinicalImpression.Note.Add(new Annotation
                 {
-                    Text = new Markdown(textEl)
+                    Text = new Markdown(textEl.GetContentsAsString())
                 });
             }
             catch (Exception exception)
