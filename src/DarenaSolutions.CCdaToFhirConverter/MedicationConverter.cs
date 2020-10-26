@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -51,6 +52,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 if (medication.Code == null)
                     throw new RequiredValueNotFoundException(element, "code", "Medication.code");
+
+                var coding = medication.Code.Coding.First();
+                var key = $"{ResourceType.Medication}|{coding.System}|{coding.Code}";
+
+                if (context.Cache.TryGetValue(key, out var resource))
+                    return resource;
+
+                context.Cache.Add(key, medication);
             }
             catch (Exception exception)
             {
