@@ -4,6 +4,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
+using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
@@ -77,6 +78,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
+                if (element.Attribute("code") == null)
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "[@code]",
+                        "Encounter.type");
+                }
+
                 // Type - CPT Code
                 var encounterCode = element.ToCodeableConcept("Encounter.type");
                 encounter.Type.Add(encounterCode);

@@ -60,6 +60,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     // 2710-2 is a deprecated code, but still valid. Update it to latest code
                     codeCoding.Code = "59408-5";
                     observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-pulse-oximetry"));
+
+                    // Also add additional coding required by the oxygen saturation profile
+                    observation.Code.Coding.Add(new Coding(
+                        "http://loinc.org",
+                        "2708-6"));
                     break;
                 default:
                     observation.Meta.ProfileElement.Add(new Canonical(GeneralVitalSignProfileUri));
@@ -103,6 +108,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 case "59576-9":
                 case "8289-1":
                 case "77606-2":
+                case "59408-5":
                     if (observation.Value is Quantity valueQuantity)
                     {
                         var valueElement = element.Element(Defaults.DefaultNs + "value");
