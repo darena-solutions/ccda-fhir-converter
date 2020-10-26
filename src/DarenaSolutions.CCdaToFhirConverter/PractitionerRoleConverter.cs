@@ -44,12 +44,19 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             role.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitionerrole"));
 
-            var practitionerConverter = new PractitionerConverter(PatientId);
-            var practitioner = practitionerConverter
-                .AddToBundle(new List<XElement> { element }, context)
-                .First();
+            try
+            {
+                var practitionerConverter = new PractitionerConverter(PatientId);
+                var practitioner = practitionerConverter
+                    .AddToBundle(new List<XElement> { element }, context)
+                    .First();
 
-            role.Practitioner = new ResourceReference($"urn:uuid:{practitioner.Id}");
+                role.Practitioner = new ResourceReference($"urn:uuid:{practitioner.Id}");
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
 
             try
             {
