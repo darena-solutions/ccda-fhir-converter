@@ -46,7 +46,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             encounter.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"));
-            var cachedResource = element.SetIdentifiers(context, encounter);
+
+            // Check for an Encounter Id in the documentationOf/serviceEvent section
+            var serviceEventIdElement =
+                element.XPathSelectElement(
+                    "/n1:ClinicalDocument/n1:documentationOf/n1:serviceEvent",
+                    context.NamespaceManager);
+            var cachedResource = serviceEventIdElement.SetIdentifiers(context, encounter);
             if (cachedResource != null)
                 return cachedResource;
 
@@ -66,16 +72,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                if (element.Attribute("code") == null)
-                {
-                    throw new RequiredValueNotFoundException(
-                        element,
-                        "[@code]",
-                        "Encounter.type");
-                }
+                var codeElement =
+                    element.Element(Defaults.DefaultNs + "code");
 
                 // Type - CPT Code
-                var encounterCode = element.ToCodeableConcept("Encounter.type");
+                var encounterCode = codeElement.ToCodeableConcept("Encounter.type");
                 encounter.Type.Add(encounterCode);
             }
             catch (Exception exception)
