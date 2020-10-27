@@ -112,7 +112,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            var context = new ConversionContext(bundle, _namespaceManager);
+            var context = new ConversionContext(bundle, cCda, _namespaceManager);
             var organization = _organizationConverter.AddToBundle(cCda, context);
 
             if (organization?.ResourceType != ResourceType.Organization)

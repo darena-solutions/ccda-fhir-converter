@@ -4,7 +4,9 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
+using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -42,6 +44,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             careTeam.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-careteam"));
+            var cachedResource = context.CCda.Root.SetIdentifiers(context, careTeam);
+            if (cachedResource != null)
+                return new List<Resource> { cachedResource };
 
             foreach (var element in elements)
             {
@@ -112,15 +117,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 namespaceManager);
 
             elements = elements.Concat(cCda.XPathSelectElements(
-                "n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:responsibleParty/n1:assignedEntity",
+                "n1:ClinicalDocument/n1:componentOf/n1:encompassingEncounter/n1:encounterParticipant/n1:assignedEntity",
                 namespaceManager));
 
             elements = elements.Concat(cCda.XPathSelectElements(
                 "n1:ClinicalDocument/n1:author/n1:assignedAuthor/n1:assignedPerson/..",
-                namespaceManager));
-
-            elements = elements.Concat(cCda.XPathSelectElements(
-                "n1:ClinicalDocument/n1:legalAuthenticator/n1:assignedEntity/n1:assignedPerson/..",
                 namespaceManager));
 
             elements = elements.Concat(cCda.XPathSelectElements(

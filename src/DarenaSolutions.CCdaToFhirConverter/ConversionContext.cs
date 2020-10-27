@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Xml;
+using System.Xml.Linq;
 using Hl7.Fhir.Model;
 
 namespace DarenaSolutions.CCdaToFhirConverter
@@ -14,10 +15,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// Initializes a new instance of the <see cref="ConversionContext"/> class
         /// </summary>
         /// <param name="bundle">The bundle to add converted resources to as entries</param>
+        /// <param name="cCda">The original CCDA document</param>
         /// <param name="namespaceManager">The namespace manager that can be used to further navigate XML elements</param>
-        public ConversionContext(Bundle bundle, XmlNamespaceManager namespaceManager)
+        public ConversionContext(Bundle bundle, XDocument cCda, XmlNamespaceManager namespaceManager)
         {
             Bundle = bundle;
+            CCda = cCda;
             NamespaceManager = namespaceManager;
             Cache = new Dictionary<string, Resource>();
             Exceptions = new List<Exception>();
@@ -27,6 +30,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// Gets the bundle to add converted resources to as entries
         /// </summary>
         public Bundle Bundle { get; }
+
+        /// <summary>
+        /// Gets the original CCDA document
+        /// </summary>
+        public XDocument CCda { get; }
 
         /// <summary>
         /// Gets the namespace manager that can be used to further navigate XML elements
