@@ -42,18 +42,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             condition.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                var identifier = identifierElement.ToIdentifier();
-                var cacheKey = $"{ResourceType.Condition}|{identifier.System}|{identifier.Value}";
-                if (context.Cache.TryGetValue(cacheKey, out var resource))
-                    return resource;
-
-                condition.Identifier.Add(identifier);
-                context.Cache.Add(cacheKey, condition);
-            }
+            var cachedResource = element.SetIdentifiers(context, condition);
+            if (cachedResource != null)
+                return cachedResource;
 
             condition.Onset = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?

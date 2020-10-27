@@ -45,6 +45,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             report.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-diagnosticreport-lab"));
+            var cachedResource = element.SetIdentifiers(context, report);
+            if (cachedResource != null)
+                return cachedResource;
+
             report.Category.Add(new CodeableConcept(
                 "http://terminology.hl7.org/CodeSystem/v2-0074",
                 "LAB",

@@ -43,8 +43,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             // Meta
-            provenance.Meta.ProfileElement.Add(
-                new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
+            provenance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
+            var cachedResource = element.SetIdentifiers(context, provenance);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

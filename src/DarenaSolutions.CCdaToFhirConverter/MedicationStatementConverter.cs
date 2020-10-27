@@ -43,11 +43,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Status = MedicationStatement.MedicationStatusCodes.Active
             };
 
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                medicationStatement.Identifier.Add(identifierElement.ToIdentifier());
-            }
+            var cachedResource = element.SetIdentifiers(context, medicationStatement);
+            if (cachedResource != null)
+                return cachedResource;
 
             medicationStatement.Effective = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?

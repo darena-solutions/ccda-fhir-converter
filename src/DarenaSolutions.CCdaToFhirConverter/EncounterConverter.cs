@@ -45,22 +45,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Class = new Coding("2.16.840.1.113883.5.4", "AMB")
             };
 
-            encounter.Meta.ProfileElement.Add(
-                new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"));
-
-            var identifierElements =
-                element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                try
-                {
-                    encounter.Identifier.Add(identifierElement.ToIdentifier(true, "Encounter.identifier"));
-                }
-                catch (Exception exception)
-                {
-                    context.Exceptions.Add(exception);
-                }
-            }
+            encounter.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"));
+            var cachedResource = element.SetIdentifiers(context, encounter);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

@@ -49,6 +49,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             carePlan.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-careplan"));
+            var cachedResource = element.SetIdentifiers(context, carePlan);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

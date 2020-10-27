@@ -36,31 +36,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             patient.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                try
-                {
-                    patient.Identifier.Add(identifierElement.ToIdentifier(true, "Patient.identifier"));
-                }
-                catch (Exception exception)
-                {
-                    context.Exceptions.Add(exception);
-                }
-            }
-
-            if (!patient.Identifier.Any())
-            {
-                try
-                {
-                    throw new RequiredValueNotFoundException(element, "id", "Patient.identifier");
-                }
-                catch (Exception exception)
-                {
-                    context.Exceptions.Add(exception);
-                }
-            }
+            var cachedResource = element.SetIdentifiers(context, patient);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

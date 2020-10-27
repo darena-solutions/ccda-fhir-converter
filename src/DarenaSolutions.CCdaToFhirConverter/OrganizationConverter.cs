@@ -46,18 +46,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             organization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-organization"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                var identifier = identifierElement.ToIdentifier();
-                var cacheKey = $"{ResourceType.Organization}|{identifier.System}|{identifier.Value}";
-                if (context.Cache.TryGetValue(cacheKey, out var resource))
-                    return resource;
-
-                organization.Identifier.Add(identifier);
-                context.Cache.Add(cacheKey, organization);
-            }
+            var cachedResource = element.SetIdentifiers(context, organization);
+            if (cachedResource != null)
+                return cachedResource;
 
             var telecoms = element.Elements(Defaults.DefaultNs + "telecom");
             foreach (var telecom in telecoms)

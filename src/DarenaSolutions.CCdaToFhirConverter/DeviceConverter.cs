@@ -44,6 +44,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
+            var cachedResource = element.SetIdentifiers(context, device);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

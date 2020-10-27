@@ -44,25 +44,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             location.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-location"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                try
-                {
-                    var identifier = identifierElement.ToIdentifier(true, "Location.identifier");
-                    var cacheKey = $"{ResourceType.Location}|{identifier.System}|{identifier.Value}";
-                    if (context.Cache.TryGetValue(cacheKey, out var resource))
-                        return resource;
-
-                    location.Identifier.Add(identifier);
-                    context.Cache.Add(cacheKey, location);
-                }
-                catch (Exception exception)
-                {
-                    context.Exceptions.Add(exception);
-                }
-            }
+            var cachedResource = element.SetIdentifiers(context, location);
+            if (cachedResource != null)
+                return cachedResource;
 
             if (element.Attribute("code") != null)
             {

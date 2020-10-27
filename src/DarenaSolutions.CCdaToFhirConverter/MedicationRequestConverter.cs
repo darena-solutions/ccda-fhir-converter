@@ -46,6 +46,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             request.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"));
+            var cachedResource = element.SetIdentifiers(context, request);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

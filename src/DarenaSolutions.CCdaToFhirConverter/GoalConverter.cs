@@ -44,12 +44,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             goal.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-goal"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                goal.Identifier.Add(identifierElement.ToIdentifier());
-            }
+            var cachedResource = element.SetIdentifiers(context, goal);
+            if (cachedResource != null)
+                return cachedResource;
 
             var effectiveTime = element
                 .Element(Defaults.DefaultNs + "effectiveTime")?

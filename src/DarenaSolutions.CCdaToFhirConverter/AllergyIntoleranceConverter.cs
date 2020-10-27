@@ -45,12 +45,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             allergyIntolerance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                allergyIntolerance.Identifier.Add(identifierElement.ToIdentifier());
-            }
+            var cachedResource = element.SetIdentifiers(context, allergyIntolerance);
+            if (cachedResource != null)
+                return cachedResource;
 
             var hasNoKnownDocumentedAllergies = false;
             element.TryGetAttribute("negationInd", out var attributeValue);

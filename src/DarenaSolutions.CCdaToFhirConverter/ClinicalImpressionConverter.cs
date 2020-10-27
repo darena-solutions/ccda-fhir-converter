@@ -42,6 +42,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
+            var cachedResource = element.SetIdentifiers(context, clinicalImpression);
+            if (cachedResource != null)
+                return cachedResource;
+
             try
             {
                 var textEl = element.Element(Defaults.DefaultNs + "text");
