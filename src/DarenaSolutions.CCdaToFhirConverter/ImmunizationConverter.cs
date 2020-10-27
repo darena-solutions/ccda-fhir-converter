@@ -44,12 +44,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             immunization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-immunization"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                immunization.Identifier.Add(identifierElement.ToIdentifier());
-            }
+            var cachedResource = element.SetIdentifiers(context, immunization);
+            if (cachedResource != null)
+                return cachedResource;
 
             var status = element
                 .Element(Defaults.DefaultNs + "statusCode")?

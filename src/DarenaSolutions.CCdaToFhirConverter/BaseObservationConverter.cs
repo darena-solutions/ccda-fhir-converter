@@ -33,12 +33,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
-            // Identifiers
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                observation.Identifier.Add(identifierElement.ToIdentifier());
-            }
+            var cachedResource = element.SetIdentifiers(context, observation);
+            if (cachedResource != null)
+                return cachedResource;
 
             // Category
             // The category code should be included by all derived instances of this base converter

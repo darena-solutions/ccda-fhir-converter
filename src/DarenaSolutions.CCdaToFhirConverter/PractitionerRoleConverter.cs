@@ -43,6 +43,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             role.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitionerrole"));
+            var cachedResource = element.SetIdentifiers(context, role);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

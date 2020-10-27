@@ -43,6 +43,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
+            var cachedResource = element.SetIdentifiers(context, medication);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {
@@ -52,14 +55,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 if (medication.Code == null)
                     throw new RequiredValueNotFoundException(element, "code", "Medication.code");
-
-                var coding = medication.Code.Coding.First();
-                var key = $"{ResourceType.Medication}|{coding.System}|{coding.Code}";
-
-                if (context.Cache.TryGetValue(key, out var resource))
-                    return resource;
-
-                context.Cache.Add(key, medication);
             }
             catch (Exception exception)
             {

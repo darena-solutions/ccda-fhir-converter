@@ -43,37 +43,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             practitioner.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitioner"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                try
-                {
-                    var identifier = identifierElement.ToIdentifier(true, "Practitioner.identifier");
-                    var cacheKey = $"{ResourceType.Practitioner}|{identifier.System}|{identifier.Value}";
-                    if (context.Cache.TryGetValue(cacheKey, out var resource))
-                        return resource;
-
-                    practitioner.Identifier.Add(identifier);
-                    context.Cache.Add(cacheKey, practitioner);
-                }
-                catch (Exception exception)
-                {
-                    context.Exceptions.Add(exception);
-                }
-            }
-
-            if (!practitioner.Identifier.Any())
-            {
-                try
-                {
-                    throw new RequiredValueNotFoundException(element, "id", "Practitioner.identifier");
-                }
-                catch (Exception exception)
-                {
-                    context.Exceptions.Add(exception);
-                }
-            }
+            var cachedResource = element.SetIdentifiers(context, practitioner);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {

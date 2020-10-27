@@ -250,7 +250,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// </summary>
         /// <param name="self">The source element</param>
         /// <param name="systemAndValueMustExist">Optionally indicate if system and value must exist. If one of the values
-        /// do not exist a <see cref="InvalidOperationException"/> exception will be thrown. (Default: <c>false</c>)</param>
+        /// do not exist, then a <see cref="RequiredValueNotFoundException"/> exception will be thrown. (Default: <c>false</c>)</param>
         /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
         /// mapped to. If a path is provided and <paramref name="systemAndValueMustExist"/> is equal to <c>true</c>, then
         /// the path will be included in the <see cref="RequiredValueNotFoundException"/> exception</param>
@@ -272,6 +272,74 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 identifier.Assigner = new ResourceReference { Display = assigningAuthorityNameValue };
 
             return identifier;
+        }
+
+        /// <summary>
+        /// Sets the identifiers for a resource. If perform caching is enabled and a resource is found in the cache with
+        /// an identifier, that resource will be returned. If perform caching is enabled and a resource was not found in
+        /// the cache with any of the read identifiers, or if perform caching is disabled, then <c>null</c> will be returned.
+        /// The resource must have a property named "Identifier" and it must be of type <c>List&lt;Identifier&gt;</c>
+        /// </summary>
+        /// <param name="element">The source element to read identifiers from. The "id" element is read</param>
+        /// <param name="context">The conversion context that contains necessary data to perform conversion</param>
+        /// <param name="resource">The resource to set the identifiers for</param>
+        /// <param name="required">Optionally indicate if identifiers are required. If they are required and no identifiers
+        /// were found in <paramref name="element"/>, then a required exception will be added to the context exception collection</param>
+        /// <param name="systemAndValueMustExist">Optionally indicate if system and value must exist. If one of the values
+        /// do not exist, then a required exception will be added to the context exception collection</param>
+        /// <param name="performCaching">Optionally specify if caching checks should be performed. If it is enabled, then
+        /// the resource will be added to the cache with the identifiers if not already found</param>
+        /// <returns>A cached resource if <paramref name="performCaching"/> is <c>true</c> and a resource was found in the
+        /// cache that matched an identifier found in <paramref name="element"/></returns>
+        public static Resource SetIdentifiers(
+            this XElement element,
+            ConversionContext context,
+            Resource resource,
+            bool required = true,
+            bool systemAndValueMustExist = true,
+            bool performCaching = true)
+        {
+            var identifiers = new List<Identifier>();
+
+            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
+            foreach (var identifierElement in identifierElements)
+            {
+                try
+                {
+                    var identifier = identifierElement.ToIdentifier(systemAndValueMustExist, $"{resource.ResourceType}.identifier");
+                    identifiers.Add(identifier);
+
+                    if (performCaching)
+                    {
+                        var key = $"{resource.ResourceType}|{identifier.System}|{identifier.Value}";
+
+                        if (context.Cache.TryGetValue(key, out var cachedResource) && cachedResource.ResourceType == resource.ResourceType)
+                            return cachedResource;
+
+                        context.Cache.Add(key, resource);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+            }
+
+            if (required && !identifiers.Any())
+            {
+                try
+                {
+                    throw new RequiredValueNotFoundException(element, "id", $"{resource.ResourceType}.identifier");
+                }
+                catch (Exception exception)
+                {
+                    context.Exceptions.Add(exception);
+                }
+            }
+
+            var identifierProperty = resource.GetType().GetProperty(nameof(Patient.Identifier));
+            identifierProperty?.SetValue(resource, identifiers);
+            return null;
         }
 
         /// <summary>

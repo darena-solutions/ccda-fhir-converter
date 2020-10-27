@@ -44,12 +44,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             procedure.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"));
-
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
-            foreach (var identifierElement in identifierElements)
-            {
-                procedure.Identifier.Add(identifierElement.ToIdentifier());
-            }
+            var cachedResource = element.SetIdentifiers(context, procedure);
+            if (cachedResource != null)
+                return cachedResource;
 
             try
             {
