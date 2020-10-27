@@ -72,11 +72,19 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var codeElement =
-                    element.Element(Defaults.DefaultNs + "code");
-
                 // Type - CPT Code
-                var encounterCode = codeElement.ToCodeableConcept("Encounter.type");
+                var encounterCode = element
+                    .Element(Defaults.DefaultNs + "code")
+                    .ToCodeableConcept("Encounter.type");
+
+                if (encounterCode == null)
+                {
+                    throw new RequiredValueNotFoundException(
+                        element,
+                        "code",
+                        "Encounter.type");
+                }
+
                 encounter.Type.Add(encounterCode);
             }
             catch (Exception exception)
