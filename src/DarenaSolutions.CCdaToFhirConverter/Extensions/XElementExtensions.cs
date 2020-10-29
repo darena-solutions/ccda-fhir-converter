@@ -249,23 +249,20 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// Converts an element into its FHIR <see cref="Identifier"/> representation
         /// </summary>
         /// <param name="self">The source element</param>
-        /// <param name="systemAndValueMustExist">Optionally indicate if system and value must exist. If one of the values
-        /// do not exist, then a <see cref="RequiredValueNotFoundException"/> exception will be thrown. (Default: <c>false</c>)</param>
         /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
-        /// mapped to. If a path is provided and <paramref name="systemAndValueMustExist"/> is equal to <c>true</c>, then
-        /// the path will be included in the <see cref="RequiredValueNotFoundException"/> exception</param>
+        /// mapped to. If a path is provided and an identifier value could not be resolved, then the path will be included
+        /// in the <see cref="RequiredValueNotFoundException"/> exception</param>
         /// <returns>The FHIR <see cref="Identifier"/> representation of the source element</returns>
-        public static Identifier ToIdentifier(this XElement self, bool systemAndValueMustExist = false, string fhirPropertyPath = null)
+        public static Identifier ToIdentifier(this XElement self, string fhirPropertyPath = null)
         {
-            var systemValue = self.Attribute("root")?.Value;
-            if (systemAndValueMustExist && string.IsNullOrWhiteSpace(systemValue))
-                throw new RequiredValueNotFoundException(self, "[@root]", $"{fhirPropertyPath}.system");
+            var rootValue = self.Attribute("root")?.Value;
+            if (string.IsNullOrWhiteSpace(rootValue))
+                throw new RequiredValueNotFoundException(self, "[@root]", fhirPropertyPath);
 
-            var codeValue = self.Attribute("extension")?.Value;
-            if (systemAndValueMustExist && string.IsNullOrWhiteSpace(codeValue))
-                throw new RequiredValueNotFoundException(self, "[@extension]", $"{fhirPropertyPath}.value");
-
-            var identifier = new Identifier(ConvertKnownSystemOid(systemValue), codeValue);
+            var extensionValue = self.Attribute("extension")?.Value;
+            var identifier = string.IsNullOrWhiteSpace(extensionValue)
+                ? new Identifier("https://terminology.bluebuttonpro.com/SampleFhirServerId", rootValue)
+                : new Identifier(ConvertKnownSystemOid(rootValue), extensionValue);
 
             var assigningAuthorityNameValue = self.Attribute("assigningAuthorityName")?.Value;
             if (!string.IsNullOrWhiteSpace(assigningAuthorityNameValue))
@@ -283,21 +280,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <param name="element">The source element to read identifiers from. The "id" element is read</param>
         /// <param name="context">The conversion context that contains necessary data to perform conversion</param>
         /// <param name="resource">The resource to set the identifiers for</param>
-        /// <param name="required">Optionally indicate if identifiers are required. If they are required and no identifiers
-        /// were found in <paramref name="element"/>, then a required exception will be added to the context exception collection</param>
-        /// <param name="systemAndValueMustExist">Optionally indicate if system and value must exist. If one of the values
-        /// do not exist, then a required exception will be added to the context exception collection</param>
-        /// <param name="performCaching">Optionally specify if caching checks should be performed. If it is enabled, then
-        /// the resource will be added to the cache with the identifiers if not already found</param>
-        /// <returns>A cached resource if <paramref name="performCaching"/> is <c>true</c> and a resource was found in the
-        /// cache that matched an identifier found in <paramref name="element"/></returns>
+        /// <returns>A cached resource if a resource was found in the cache that matched an identifier found in <paramref name="element"/>.
+        /// Otherwise, <c>null</c> is returned</returns>
         public static Resource SetIdentifiers(
             this XElement element,
             ConversionContext context,
-            Resource resource,
-            bool required = true,
-            bool systemAndValueMustExist = true,
-            bool performCaching = true)
+            Resource resource)
         {
             var identifiers = new List<Identifier>();
 
@@ -306,18 +294,15 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             {
                 try
                 {
-                    var identifier = identifierElement.ToIdentifier(systemAndValueMustExist, $"{resource.ResourceType}.identifier");
+                    var identifier = identifierElement.ToIdentifier($"{resource.ResourceType}.identifier");
                     identifiers.Add(identifier);
 
-                    if (performCaching)
-                    {
-                        var key = $"{resource.ResourceType}|{identifier.System}|{identifier.Value}";
+                    var key = $"{resource.ResourceType}|{identifier.System}|{identifier.Value}";
 
-                        if (context.Cache.TryGetValue(key, out var cachedResource) && cachedResource.ResourceType == resource.ResourceType)
-                            return cachedResource;
+                    if (context.Cache.TryGetValue(key, out var cachedResource) && cachedResource.ResourceType == resource.ResourceType)
+                        return cachedResource;
 
-                        context.Cache.Add(key, resource);
-                    }
+                    context.Cache.Add(key, resource);
                 }
                 catch (Exception exception)
                 {
@@ -325,7 +310,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 }
             }
 
-            if (required && !identifiers.Any())
+            if (!identifiers.Any())
             {
                 try
                 {
