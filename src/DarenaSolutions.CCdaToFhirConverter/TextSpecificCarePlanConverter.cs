@@ -69,6 +69,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 switch (coding.Code)
                 {
                     case "51848-0":
+                        // Assessments
                         var clinicalDocumentIdentifier = context.CCda
                             .XPathSelectElement("n1:ClinicalDocument/n1:id", context.NamespaceManager)?
                             .ToIdentifier("CarePlan.identifier.value");
@@ -102,7 +103,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         context.Cache.Add(cacheKey, carePlan);
                         break;
                     default:
-                        var cachedResource = element.SetIdentifiers(context, carePlan);
+                        XElement identifierElement;
+                        if (coding.Code == "42349-1")
+                        {
+                            identifierElement = element.XPathSelectElement("n1:entry/n1:observation[@moodCode='INT']", context.NamespaceManager);
+
+                            if (identifierElement == null)
+                                throw new RequiredValueNotFoundException(element, "entry/observation[@moodCode='INT']", "CarePlan.identifier");
+                        }
+                        else
+                        {
+                            identifierElement = element;
+                        }
+
+                        var cachedResource = identifierElement.SetIdentifiers(context, carePlan);
                         if (cachedResource != null)
                             return cachedResource;
 
