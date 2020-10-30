@@ -46,7 +46,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 // Date Recorded
                 var dateRecordedValue = element
-                    .Element(Defaults.DefaultNs + "time")?
+                    .Element(Namespaces.DefaultNs + "time")?
                     .Attribute("value")?
                     .Value;
 
@@ -79,7 +79,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
+                var assignedAuthorElement = element.Element(Namespaces.DefaultNs + "assignedAuthor");
                 if (assignedAuthorElement == null)
                     throw new RequiredValueNotFoundException(element, "assignedAuthor", "Provenance.agent.who");
 
@@ -102,7 +102,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 try
                 {
-                    var representedOrganizationElement = assignedAuthorElement.Element(Defaults.DefaultNs + "representedOrganization");
+                    var representedOrganizationElement = assignedAuthorElement.Element(Namespaces.DefaultNs + "representedOrganization");
                     var representedOrganizationConverter = new OrganizationConverter();
                     var representedOrganization = representedOrganizationConverter.AddToBundle(representedOrganizationElement, context);
 

@@ -49,13 +49,76 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             carePlan.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-careplan"));
-            var cachedResource = element.SetIdentifiers(context, carePlan);
-            if (cachedResource != null)
-                return cachedResource;
+            carePlan.Category.Add(new CodeableConcept(
+                "http://hl7.org/fhir/us/core/CodeSystem/careplan-category",
+                "assess-plan"));
 
             try
             {
-                var textEl = element.Element(Defaults.DefaultNs + "text")?.GetContentsAsString();
+                // A code element will always exist in a section, we know this because of GetPrimaryElements which will
+                // take care plan elements based on reading the code value in a section
+                var sectionElement = element.Name.LocalName == "section"
+                    ? element
+                    : element.XPathSelectElement("ancestor::n1:section", context.NamespaceManager);
+
+                var codeableConcept = sectionElement
+                    .FindCodeElementWithTranslation()
+                    .ToCodeableConcept("CarePlan.category");
+
+                var coding = codeableConcept.Coding.First();
+                switch (coding.Code)
+                {
+                    case "51848-0":
+                        var clinicalDocumentIdentifier = context.CCda
+                            .XPathSelectElement("n1:ClinicalDocument/n1:id", context.NamespaceManager)?
+                            .ToIdentifier("CarePlan.identifier.value");
+
+                        if (clinicalDocumentIdentifier == null)
+                        {
+                            throw new RequiredValueNotFoundException(
+                                context.CCda.Root,
+                                "id",
+                                "CarePlan.identifier.value");
+                        }
+
+                        var patientIdentifier = context.CCda
+                            .XPathSelectElement("n1:ClinicalDocument/n1:recordTarget/n1:patientRole/n1:id", context.NamespaceManager)?
+                            .ToIdentifier("CarePlan.identifier.value");
+
+                        if (patientIdentifier == null)
+                        {
+                            throw new RequiredValueNotFoundException(
+                                context.CCda.Root,
+                                "recordTarget/patientRole/id",
+                                "CarePlan.identifier.value");
+                        }
+
+                        var identifierValue = $"{clinicalDocumentIdentifier.Value}|{patientIdentifier.Value}|{coding.Code}";
+                        var cacheKey = $"{ResourceType.CarePlan}|{Systems.SampleBbpSystem}|{identifierValue}";
+                        if (context.Cache.TryGetValue(cacheKey, out var resource))
+                            return resource;
+
+                        carePlan.Identifier.Add(new Identifier(Systems.SampleBbpSystem, identifierValue));
+                        context.Cache.Add(cacheKey, carePlan);
+                        break;
+                    default:
+                        var cachedResource = element.SetIdentifiers(context, carePlan);
+                        if (cachedResource != null)
+                            return cachedResource;
+
+                        break;
+                }
+
+                carePlan.Category.Add(codeableConcept);
+            }
+            catch (Exception exception)
+            {
+                context.Exceptions.Add(exception);
+            }
+
+            try
+            {
+                var textEl = element.Element(Namespaces.DefaultNs + "text")?.GetContentsAsString();
                 if (string.IsNullOrWhiteSpace(textEl))
                     throw new RequiredValueNotFoundException(element, "text", "CarePlan.text.div");
 
@@ -64,24 +127,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     Div = textEl,
                     Status = Narrative.NarrativeStatus.Generated
                 };
-            }
-            catch (Exception exception)
-            {
-                context.Exceptions.Add(exception);
-            }
-
-            carePlan.Category.Add(new CodeableConcept(
-                "http://hl7.org/fhir/us/core/CodeSystem/careplan-category",
-                "assess-plan"));
-
-            try
-            {
-                var codeableConcept = element
-                    .FindCodeElementWithTranslation()?
-                    .ToCodeableConcept("CarePlan.category");
-
-                if (codeableConcept != null)
-                    carePlan.Category.Add(codeableConcept);
             }
             catch (Exception exception)
             {
@@ -130,7 +175,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <returns>The care plan elements from the CCDA</returns>
         protected virtual IEnumerable<XElement> GetCarePlanElements(XDocument cCda, XmlNamespaceManager namespaceManager)
         {
-            var xPath = "//n1:section/n1:code[@code='18776-5']/..";
+            var xPath =
+                "//n1:section/n1:code[@code='18776-5']/../n1:entry/n1:observation |" +
+                "//n1:section/n1:code[@code='18776-5']/../n1:entry/n1:act";
+
             return cCda.XPathSelectElements(xPath, namespaceManager);
         }
     }

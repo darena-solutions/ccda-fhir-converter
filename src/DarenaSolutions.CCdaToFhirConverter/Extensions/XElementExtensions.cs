@@ -69,7 +69,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     {
                         Extension = new List<Extension>
                         {
-                            new Extension(Defaults.NullFlavorSystem, new Code(nullFlavorValue))
+                            new Extension(Systems.NullFlavorSystem, new Code(nullFlavorValue))
                         }
                     };
                 }
@@ -89,13 +89,13 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             var address = new Address
             {
-                City = self.Element(Defaults.DefaultNs + "city")?.Value,
-                State = self.Element(Defaults.DefaultNs + "state")?.Value,
-                PostalCode = self.Element(Defaults.DefaultNs + "postalCode")?.Value,
-                Country = self.Element(Defaults.DefaultNs + "country")?.Value
+                City = self.Element(Namespaces.DefaultNs + "city")?.Value,
+                State = self.Element(Namespaces.DefaultNs + "state")?.Value,
+                PostalCode = self.Element(Namespaces.DefaultNs + "postalCode")?.Value,
+                Country = self.Element(Namespaces.DefaultNs + "country")?.Value
             };
 
-            var lineElements = self.Elements(Defaults.DefaultNs + "streetAddressLine");
+            var lineElements = self.Elements(Namespaces.DefaultNs + "streetAddressLine");
             foreach (var lineElement in lineElements)
             {
                 address.LineElement.Add(new FhirString(lineElement.Value));
@@ -156,22 +156,22 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             var name = new HumanName
             {
                 Use = use,
-                Family = self.Element(Defaults.DefaultNs + "family")?.Value
+                Family = self.Element(Namespaces.DefaultNs + "family")?.Value
             };
 
-            var givenElements = self.Elements(Defaults.DefaultNs + "given");
+            var givenElements = self.Elements(Namespaces.DefaultNs + "given");
             foreach (var givenElement in givenElements)
             {
                 name.GivenElement.Add(new FhirString(givenElement.Value));
             }
 
-            var prefixElements = self.Elements(Defaults.DefaultNs + "prefix");
+            var prefixElements = self.Elements(Namespaces.DefaultNs + "prefix");
             foreach (var prefixElement in prefixElements)
             {
                 name.PrefixElement.Add(new FhirString(prefixElement.Value));
             }
 
-            var suffixElements = self.Elements(Defaults.DefaultNs + "suffix");
+            var suffixElements = self.Elements(Namespaces.DefaultNs + "suffix");
             foreach (var suffixElement in suffixElements)
             {
                 name.SuffixElement.Add(new FhirString(suffixElement.Value));
@@ -261,7 +261,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
 
             var extensionValue = self.Attribute("extension")?.Value;
             var identifier = string.IsNullOrWhiteSpace(extensionValue)
-                ? new Identifier("https://terminology.bluebuttonpro.com/SampleFhirServerId", rootValue)
+                ? new Identifier(Systems.SampleBbpSystem, rootValue)
                 : new Identifier(ConvertKnownSystemOid(rootValue), extensionValue);
 
             var assigningAuthorityNameValue = self.Attribute("assigningAuthorityName")?.Value;
@@ -289,7 +289,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         {
             var identifiers = new List<Identifier>();
 
-            var identifierElements = element.Elements(Defaults.DefaultNs + "id");
+            var identifierElements = element.Elements(Namespaces.DefaultNs + "id");
             foreach (var identifierElement in identifierElements)
             {
                 try
@@ -350,7 +350,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         public static Period ToPeriod(this XElement self)
         {
             var lowValue = self
-                .Element(Defaults.DefaultNs + "low")?
+                .Element(Namespaces.DefaultNs + "low")?
                 .Attribute("value")?
                 .Value;
 
@@ -358,7 +358,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 return null;
 
             var highValue = self
-                .Element(Defaults.DefaultNs + "high")?
+                .Element(Namespaces.DefaultNs + "high")?
                 .Attribute("value")?
                 .Value;
 
@@ -383,7 +383,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         public static Date ToFhirDate(this XElement self)
         {
             var lowValue = self
-                .Element(Defaults.DefaultNs + "low")?
+                .Element(Namespaces.DefaultNs + "low")?
                 .Attribute("value")?
                 .Value;
 
@@ -409,7 +409,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         public static FhirDateTime ToFhirDateTime(this XElement self)
         {
             var lowValue = self
-                .Element(Defaults.DefaultNs + "low")?
+                .Element(Namespaces.DefaultNs + "low")?
                 .Attribute("value")?
                 .Value;
 
@@ -552,11 +552,11 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                 : self.XPathSelectElement(initialXPath, namespaceManager);
 
             var el = initialEl?
-                .Element(Defaults.DefaultNs + codeElementName)?
-                .Element(Defaults.DefaultNs + "translation");
+                .Element(Namespaces.DefaultNs + codeElementName)?
+                .Element(Namespaces.DefaultNs + "translation");
 
             if (el == null && !translationOnly)
-                el = initialEl?.Element(Defaults.DefaultNs + codeElementName);
+                el = initialEl?.Element(Namespaces.DefaultNs + codeElementName);
 
             return el;
         }
@@ -595,7 +595,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             if (self.Name.LocalName != "value")
                 throw new ArgumentException("Only 'value' elements can be used with this extension");
 
-            var type = self.Attribute(Defaults.XsiNs + "type")?.Value.ToLowerInvariant();
+            var type = self.Attribute(Namespaces.XsiNs + "type")?.Value.ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(type))
                 throw new RequiredValueNotFoundException(self, "[@type]", fhirPropertyPath);
 

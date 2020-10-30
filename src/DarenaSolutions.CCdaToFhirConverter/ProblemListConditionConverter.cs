@@ -59,7 +59,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 null));
 
             // Provenance
-            var authorElement = element.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
+            var authorElement = element.Elements(Namespaces.DefaultNs + "author").FirstOrDefault();
             if (authorElement == null)
                 return condition;
 

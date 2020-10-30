@@ -111,7 +111,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 case "59408-5":
                     if (observation.Value is Quantity valueQuantity)
                     {
-                        var valueElement = element.Element(Defaults.DefaultNs + "value");
+                        var valueElement = element.Element(Namespaces.DefaultNs + "value");
 
                         if (valueQuantity.Value == null)
                         {

@@ -48,11 +48,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var materialElement = element.Element(Defaults.DefaultNs + "manufacturedMaterial");
+                var materialElement = element.Element(Namespaces.DefaultNs + "manufacturedMaterial");
                 if (materialElement != null)
                 {
                     medication.Code = materialElement
-                        .Element(Defaults.DefaultNs + "code")?
+                        .Element(Namespaces.DefaultNs + "code")?
                         .ToCodeableConcept("Medication.code");
                 }
 

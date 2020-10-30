@@ -77,7 +77,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 request.AuthoredOnElement = element
-                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .Element(Namespaces.DefaultNs + "effectiveTime")?
                     .ToFhirDateTime();
 
                 if (request.AuthoredOnElement == null)
@@ -96,8 +96,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 var authorEl = element
-                    .Element(Defaults.DefaultNs + "author")?
-                    .Element(Defaults.DefaultNs + "assignedAuthor");
+                    .Element(Namespaces.DefaultNs + "author")?
+                    .Element(Namespaces.DefaultNs + "assignedAuthor");
 
                 if (authorEl == null)
                 {

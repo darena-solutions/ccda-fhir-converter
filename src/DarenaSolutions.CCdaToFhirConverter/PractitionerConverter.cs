@@ -50,8 +50,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 var nameElements = element
-                    .Element(Defaults.DefaultNs + "assignedPerson")?
-                    .Elements(Defaults.DefaultNs + "name")
+                    .Element(Namespaces.DefaultNs + "assignedPerson")?
+                    .Elements(Namespaces.DefaultNs + "name")
                     .ToList();
 
                 if (nameElements == null || !nameElements.Any())
@@ -78,7 +78,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 context.Exceptions.Add(exception);
             }
 
-            var addressElements = element.Elements(Defaults.DefaultNs + "addr");
+            var addressElements = element.Elements(Namespaces.DefaultNs + "addr");
             foreach (var addressElement in addressElements)
             {
                 try
@@ -91,7 +91,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
             }
 
-            var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
+            var telecomElements = element.Elements(Namespaces.DefaultNs + "telecom");
             foreach (var telecomElement in telecomElements)
             {
                 try
@@ -104,7 +104,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
             }
 
-            var qualificationCodes = element.Elements(Defaults.DefaultNs + "code");
+            var qualificationCodes = element.Elements(Namespaces.DefaultNs + "code");
             foreach (var qualificationCode in qualificationCodes)
             {
                 try

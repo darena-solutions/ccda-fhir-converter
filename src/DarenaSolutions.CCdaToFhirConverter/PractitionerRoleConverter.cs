@@ -63,7 +63,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var representedOrgEl = element.Element(Defaults.DefaultNs + "representedOrganization");
+                var representedOrgEl = element.Element(Namespaces.DefaultNs + "representedOrganization");
                 if (representedOrgEl == null)
                 {
                     throw new RequiredValueNotFoundException(
@@ -84,7 +84,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 var telecom = element
-                    .Element(Defaults.DefaultNs + "telecom")?
+                    .Element(Namespaces.DefaultNs + "telecom")?
                     .ToContactPoint("PractitionerRole.telecom");
 
                 if (telecom == null)

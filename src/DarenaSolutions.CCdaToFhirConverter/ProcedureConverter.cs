@@ -65,7 +65,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 procedure.Performed = element
-                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .Element(Namespaces.DefaultNs + "effectiveTime")?
                     .ToDateTimeElement();
 
                 if (procedure.Performed == null)
@@ -77,8 +77,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             var participantRoleEl = element
-                .Element(Defaults.DefaultNs + "participant")?
-                .Element(Defaults.DefaultNs + "participantRole");
+                .Element(Namespaces.DefaultNs + "participant")?
+                .Element(Namespaces.DefaultNs + "participantRole");
 
             if (participantRoleEl != null)
             {
