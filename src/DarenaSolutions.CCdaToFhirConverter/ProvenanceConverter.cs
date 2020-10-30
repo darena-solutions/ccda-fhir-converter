@@ -42,14 +42,6 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Agent = new List<Provenance.AgentComponent>()
             };
 
-            // Meta
-            provenance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
-            var cachedResource = element
-                .Element(Defaults.DefaultNs + "assignedAuthor")
-                .SetIdentifiers(context, provenance);
-            if (cachedResource != null)
-                return cachedResource;
-
             try
             {
                 // Date Recorded
@@ -90,6 +82,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var assignedAuthorElement = element.Element(Defaults.DefaultNs + "assignedAuthor");
                 if (assignedAuthorElement == null)
                     throw new RequiredValueNotFoundException(element, "assignedAuthor", "Provenance.agent.who");
+
+                // Meta
+                provenance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
+                var cachedResource = assignedAuthorElement.SetIdentifiers(context, provenance);
+                if (cachedResource != null)
+                    return cachedResource;
 
                 try
                 {
