@@ -51,8 +51,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 device.Type = element
-                    .Element(Defaults.DefaultNs + "playingDevice")?
-                    .Element(Defaults.DefaultNs + "code")?
+                    .Element(Namespaces.DefaultNs + "playingDevice")?
+                    .Element(Namespaces.DefaultNs + "code")?
                     .ToCodeableConcept("Device.type");
             }
             catch (Exception exception)
@@ -70,7 +70,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 };
             }
 
-            var barcodeEl = element.Element(Defaults.DefaultNs + "id");
+            var barcodeEl = element.Element(Namespaces.DefaultNs + "id");
             if (barcodeEl != null)
             {
                 try
@@ -102,8 +102,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
 
             var scopingEntityValue = element
-                .Element(Defaults.DefaultNs + "scopingEntity")?
-                .Element(Defaults.DefaultNs + "id")?
+                .Element(Namespaces.DefaultNs + "scopingEntity")?
+                .Element(Namespaces.DefaultNs + "id")?
                 .Attribute("root")?
                 .Value;
 
@@ -139,11 +139,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             foreach (var component in deviceComponents)
             {
                 var code = component
-                    .Element(Defaults.DefaultNs + "code")?
+                    .Element(Namespaces.DefaultNs + "code")?
                     .Attribute("code")?
                     .Value;
 
-                var valueEl = component.Element(Defaults.DefaultNs + "value");
+                var valueEl = component.Element(Namespaces.DefaultNs + "value");
                 if (valueEl == null)
                     continue;
 

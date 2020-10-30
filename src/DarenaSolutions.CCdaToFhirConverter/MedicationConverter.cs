@@ -50,7 +50,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 medication.Code = element
-                    .Element(Defaults.DefaultNs + "code")?
+                    .Element(Namespaces.DefaultNs + "code")?
                     .ToCodeableConcept("Medication.code");
 
                 if (medication.Code == null)

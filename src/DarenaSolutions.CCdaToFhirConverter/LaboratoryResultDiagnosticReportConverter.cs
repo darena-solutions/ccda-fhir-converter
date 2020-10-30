@@ -72,7 +72,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 report.Effective = element
-                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .Element(Namespaces.DefaultNs + "effectiveTime")?
                     .ToDateTimeElement();
 
                 if (report.Effective == null)

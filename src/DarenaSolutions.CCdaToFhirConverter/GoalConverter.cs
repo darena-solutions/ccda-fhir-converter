@@ -49,7 +49,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 return cachedResource;
 
             var effectiveTime = element
-                .Element(Defaults.DefaultNs + "effectiveTime")?
+                .Element(Namespaces.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
             if (effectiveTime is Period period)
@@ -68,7 +68,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var descriptionEl = element.Element(Defaults.DefaultNs + "value");
+                var descriptionEl = element.Element(Namespaces.DefaultNs + "value");
                 var description = descriptionEl?.ToFhirElementBasedOnType(new[] { "st" }, "Goal.description.text");
 
                 if (description == null)

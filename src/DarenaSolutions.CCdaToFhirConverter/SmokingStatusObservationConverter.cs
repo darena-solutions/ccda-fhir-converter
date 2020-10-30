@@ -43,12 +43,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 if (observation.Value == null)
                     throw new RequiredValueNotFoundException(element, "value", "Observation.value");
 
-                var valueEl = element.Element(Defaults.DefaultNs + "value");
+                var valueEl = element.Element(Namespaces.DefaultNs + "value");
                 if (!(observation.Value is CodeableConcept))
                 {
                     throw new UnexpectedValueTypeException(
                         valueEl,
-                        valueEl.Attribute(Defaults.XsiNs + "type").Value,
+                        valueEl.Attribute(Namespaces.XsiNs + "type").Value,
                         "Observation.value");
                 }
             }

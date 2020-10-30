@@ -5,7 +5,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Constants
     /// <summary>
     /// A class that contains default values that are used throughout this library
     /// </summary>
-    public static class Defaults
+    public static class Namespaces
     {
         /// <summary>
         /// The default namespace for a CCDA document
@@ -21,10 +21,5 @@ namespace DarenaSolutions.CCdaToFhirConverter.Constants
         /// The XsiNs namespace for a CCDA document
         /// </summary>
         public static readonly XNamespace XsiNs = "http://www.w3.org/2001/XMLSchema-instance";
-
-        /// <summary>
-        /// The name of the system for null flavors
-        /// </summary>
-        public static readonly string NullFlavorSystem = "http://hl7.org/fhir/StructureDefinition/iso21090-nullFlavor";
     }
 }

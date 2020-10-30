@@ -42,7 +42,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var addressElement = element.Element(Defaults.DefaultNs + "addr");
+                var addressElement = element.Element(Namespaces.DefaultNs + "addr");
                 if (addressElement != null)
                     patient.Address.Add(addressElement.ToAddress("Patient.address"));
             }
@@ -51,7 +51,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 context.Exceptions.Add(exception);
             }
 
-            var telecomElements = element.Elements(Defaults.DefaultNs + "telecom");
+            var telecomElements = element.Elements(Namespaces.DefaultNs + "telecom");
             foreach (var telecomElement in telecomElements)
             {
                 try
@@ -64,10 +64,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
             }
 
-            var patientElement = element.Element(Defaults.DefaultNs + "patient");
+            var patientElement = element.Element(Namespaces.DefaultNs + "patient");
             if (patientElement != null)
             {
-                var nameElements = patientElement.Elements(Defaults.DefaultNs + "name");
+                var nameElements = patientElement.Elements(Namespaces.DefaultNs + "name");
                 foreach (var nameElement in nameElements)
                 {
                     try
@@ -95,7 +95,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 try
                 {
                     var genderValue = patientElement
-                        .Element(Defaults.DefaultNs + "administrativeGenderCode")?
+                        .Element(Namespaces.DefaultNs + "administrativeGenderCode")?
                         .Attribute("displayName")?
                         .Value;
 
@@ -123,7 +123,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 try
                 {
                     var birthDateValue = patientElement
-                        .Element(Defaults.DefaultNs + "birthTime")?
+                        .Element(Namespaces.DefaultNs + "birthTime")?
                         .Attribute("value")?
                         .Value;
 
@@ -140,7 +140,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 try
                 {
-                    var maritalStatusElement = patientElement.Element(Defaults.DefaultNs + "maritalStatusCode");
+                    var maritalStatusElement = patientElement.Element(Namespaces.DefaultNs + "maritalStatusCode");
                     if (maritalStatusElement != null)
                         patient.MaritalStatus = maritalStatusElement.ToCodeableConcept("Patient.maritalStatus");
                 }
@@ -152,8 +152,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var defaultCodeElements = new List<XElement>();
                 var stdcCodeElements = new List<XElement>();
 
-                defaultCodeElements.AddRange(patientElement.Elements(Defaults.DefaultNs + "raceCode"));
-                stdcCodeElements.AddRange(patientElement.Elements(Defaults.SdtcNs + "raceCode"));
+                defaultCodeElements.AddRange(patientElement.Elements(Namespaces.DefaultNs + "raceCode"));
+                stdcCodeElements.AddRange(patientElement.Elements(Namespaces.SdtcNs + "raceCode"));
 
                 var raceExtension = GetRaceOrEthnicGroupExtension(defaultCodeElements, stdcCodeElements, true, context);
                 if (raceExtension != null)
@@ -162,11 +162,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 defaultCodeElements.Clear();
                 stdcCodeElements.Clear();
 
-                var ethnicGroupCode = patientElement.Element(Defaults.DefaultNs + "ethnicGroupCode");
+                var ethnicGroupCode = patientElement.Element(Namespaces.DefaultNs + "ethnicGroupCode");
                 if (ethnicGroupCode != null)
                     defaultCodeElements.Add(ethnicGroupCode);
 
-                var stdcEthnicGroupCode = patientElement.Element(Defaults.SdtcNs + "ethnicGroupCode");
+                var stdcEthnicGroupCode = patientElement.Element(Namespaces.SdtcNs + "ethnicGroupCode");
                 if (stdcEthnicGroupCode != null)
                     stdcCodeElements.Add(stdcEthnicGroupCode);
 
@@ -175,9 +175,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     patient.Extension.Add(ethnicityExtension);
 
                 var birthPlaceAddressElement = patientElement
-                    .Element(Defaults.DefaultNs + "birthplace")?
-                    .Element(Defaults.DefaultNs + "place")?
-                    .Element(Defaults.DefaultNs + "addr");
+                    .Element(Namespaces.DefaultNs + "birthplace")?
+                    .Element(Namespaces.DefaultNs + "place")?
+                    .Element(Namespaces.DefaultNs + "addr");
 
                 if (birthPlaceAddressElement != null)
                 {
@@ -186,14 +186,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         birthPlaceAddressElement.ToAddress("Patient.extension")));
                 }
 
-                var guardianElement = patientElement.Element(Defaults.DefaultNs + "guardian");
+                var guardianElement = patientElement.Element(Namespaces.DefaultNs + "guardian");
                 if (guardianElement != null)
                 {
                     patient.Contact.Add(new Patient.ContactComponent());
 
                     try
                     {
-                        var codeElement = guardianElement.Element(Defaults.DefaultNs + "code");
+                        var codeElement = guardianElement.Element(Namespaces.DefaultNs + "code");
                         if (codeElement != null)
                             patient.Contact[0].Relationship.Add(codeElement.ToCodeableConcept("Patient.contact.relationship"));
                     }
@@ -204,7 +204,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     try
                     {
-                        var guardianAddressElement = guardianElement.Element(Defaults.DefaultNs + "addr");
+                        var guardianAddressElement = guardianElement.Element(Namespaces.DefaultNs + "addr");
                         if (guardianAddressElement != null)
                             patient.Contact[0].Address = guardianAddressElement.ToAddress("Patient.contact.address");
                     }
@@ -215,7 +215,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     try
                     {
-                        var guardianTelecomElement = guardianElement.Element(Defaults.DefaultNs + "telecom");
+                        var guardianTelecomElement = guardianElement.Element(Namespaces.DefaultNs + "telecom");
                         if (guardianTelecomElement != null)
                             patient.Contact[0].Telecom.Add(guardianTelecomElement.ToContactPoint("Patient.contact.telecom"));
                     }
@@ -226,7 +226,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     try
                     {
-                        var guardianNameElement = guardianElement.Element(Defaults.DefaultNs + "name");
+                        var guardianNameElement = guardianElement.Element(Namespaces.DefaultNs + "name");
                         if (guardianNameElement != null)
                             patient.Contact[0].Name = guardianNameElement.ToHumanName("Patient.contact.name");
                     }
@@ -236,8 +236,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     }
                 }
 
-                var communicationElement = patientElement.Element(Defaults.DefaultNs + "languageCommunication");
-                var communicationCodeElement = communicationElement?.Element(Defaults.DefaultNs + "languageCode");
+                var communicationElement = patientElement.Element(Namespaces.DefaultNs + "languageCommunication");
+                var communicationCodeElement = communicationElement?.Element(Namespaces.DefaultNs + "languageCode");
 
                 if (communicationCodeElement != null)
                 {
@@ -299,7 +299,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         try
                         {
                             var preferredValue = communicationElement
-                                .Element(Defaults.DefaultNs + "preferenceInd")?
+                                .Element(Namespaces.DefaultNs + "preferenceInd")?
                                 .Attribute("value")?
                                 .Value;
 

@@ -38,8 +38,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
             _converterTypes = new Dictionary<Type, Func<ConverterFactoryContext, IResourceConverter>>();
 
             _namespaceManager = new XmlNamespaceManager(new NameTable());
-            _namespaceManager.AddNamespace("n1", Defaults.DefaultNs.NamespaceName);
-            _namespaceManager.AddNamespace("sdtc", Defaults.SdtcNs.NamespaceName);
+            _namespaceManager.AddNamespace("n1", Namespaces.DefaultNs.NamespaceName);
+            _namespaceManager.AddNamespace("sdtc", Namespaces.SdtcNs.NamespaceName);
 
             if (addDefaultConverters)
             {

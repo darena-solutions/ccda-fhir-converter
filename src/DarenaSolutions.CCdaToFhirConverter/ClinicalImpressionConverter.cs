@@ -48,8 +48,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var textEl = element.Element(Defaults.DefaultNs + "text");
-                var textReferenceEl = textEl?.Element(Defaults.DefaultNs + "reference");
+                var textEl = element.Element(Namespaces.DefaultNs + "text");
+                var textReferenceEl = textEl?.Element(Namespaces.DefaultNs + "reference");
                 if (textReferenceEl != null)
                 {
                     var referenceId = textReferenceEl.Attribute("value")?.Value;
@@ -80,7 +80,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 context.Exceptions.Add(exception);
             }
 
-            clinicalImpression.DateElement = element.Element(Defaults.DefaultNs + "effectiveTime")?.ToFhirDateTime();
+            clinicalImpression.DateElement = element.Element(Namespaces.DefaultNs + "effectiveTime")?.ToFhirDateTime();
 
             try
             {
