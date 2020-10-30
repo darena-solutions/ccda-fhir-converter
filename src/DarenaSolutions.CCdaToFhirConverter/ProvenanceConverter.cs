@@ -44,7 +44,9 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             // Meta
             provenance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
-            var cachedResource = element.SetIdentifiers(context, provenance);
+            var cachedResource = element
+                .Element(Defaults.DefaultNs + "assignedAuthor")
+                .SetIdentifiers(context, provenance);
             if (cachedResource != null)
                 return cachedResource;
 
