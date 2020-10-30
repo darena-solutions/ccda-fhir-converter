@@ -103,11 +103,20 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         context.Cache.Add(cacheKey, carePlan);
                         break;
                     default:
-                        var idElement = coding.Code == "42349-1"
-                            ? element.XPathSelectElement("n1:entry/n1:observation[@moodCode='INT']", context.NamespaceManager)
-                            : element;
+                        XElement identifierElement;
+                        if (coding.Code == "42349-1")
+                        {
+                            identifierElement = element.XPathSelectElement("n1:entry/n1:observation[@moodCode='INT']", context.NamespaceManager);
 
-                        var cachedResource = idElement.SetIdentifiers(context, carePlan);
+                            if (identifierElement == null)
+                                throw new RequiredValueNotFoundException(element, "entry/observation[@moodCode='INT']", "CarePlan.identifier");
+                        }
+                        else
+                        {
+                            identifierElement = element;
+                        }
+
+                        var cachedResource = identifierElement.SetIdentifiers(context, carePlan);
                         if (cachedResource != null)
                             return cachedResource;
 
