@@ -3,7 +3,7 @@
 namespace DarenaSolutions.CCdaToFhirConverter.Constants
 {
     /// <summary>
-    /// A class that contains default values that are used throughout this library
+    /// A class that contains various namespaces that are used throughout this library
     /// </summary>
     public static class Namespaces
     {
