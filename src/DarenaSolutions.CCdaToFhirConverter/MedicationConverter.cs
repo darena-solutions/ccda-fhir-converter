@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
@@ -49,12 +48,16 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                medication.Code = element
-                    .Element(Defaults.DefaultNs + "code")?
-                    .ToCodeableConcept("Medication.code");
+                var materialElement = element.Element(Defaults.DefaultNs + "manufacturedMaterial");
+                if (materialElement != null)
+                {
+                    medication.Code = materialElement
+                        .Element(Defaults.DefaultNs + "code")?
+                        .ToCodeableConcept("Medication.code");
+                }
 
                 if (medication.Code == null)
-                    throw new RequiredValueNotFoundException(element, "code", "Medication.code");
+                    throw new RequiredValueNotFoundException(materialElement, "manufacturedMaterial/code", "Medication.code");
             }
             catch (Exception exception)
             {

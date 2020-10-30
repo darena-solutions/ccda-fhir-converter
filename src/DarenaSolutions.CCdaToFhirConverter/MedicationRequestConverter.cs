@@ -52,13 +52,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var medicationXPath = "n1:consumable/n1:manufacturedProduct/n1:manufacturedMaterial";
+                var medicationXPath = "n1:consumable/n1:manufacturedProduct";
                 var medicationEl = element.XPathSelectElement(medicationXPath, context.NamespaceManager);
                 if (medicationEl == null)
                 {
                     throw new RequiredValueNotFoundException(
                         element,
-                        "consumable/manufacturedProduct/manufacturedMaterial",
+                        "consumable/manufacturedProduct",
                         "MedicationRequest.medication");
                 }
 
