@@ -57,7 +57,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
 
                 if (medication.Code == null)
-                    throw new RequiredValueNotFoundException(materialElement, "code", "Medication.code");
+                    throw new RequiredValueNotFoundException(element, "manufacturedMaterial/code", "Medication.code");
             }
             catch (Exception exception)
             {
