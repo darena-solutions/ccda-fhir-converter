@@ -29,7 +29,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 Id = id,
                 Meta = new Meta(),
-                Name = element.Element(Defaults.DefaultNs + "name")?.Value,
+                Name = element.Element(Namespaces.DefaultNs + "name")?.Value,
                 Active = true
             };
 
@@ -50,7 +50,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             if (cachedResource != null)
                 return cachedResource;
 
-            var telecoms = element.Elements(Defaults.DefaultNs + "telecom");
+            var telecoms = element.Elements(Namespaces.DefaultNs + "telecom");
             foreach (var telecom in telecoms)
             {
                 try
@@ -63,7 +63,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
             }
 
-            var addressElements = element.Elements(Defaults.DefaultNs + "addr");
+            var addressElements = element.Elements(Namespaces.DefaultNs + "addr");
             foreach (var addressElement in addressElements)
             {
                 try

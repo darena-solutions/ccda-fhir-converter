@@ -61,11 +61,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             }
             else
             {
-                var effectiveTimeElement = element.Element(Defaults.DefaultNs + "effectiveTime");
+                var effectiveTimeElement = element.Element(Namespaces.DefaultNs + "effectiveTime");
                 allergyIntolerance.Onset = effectiveTimeElement?.ToDateTimeElement();
 
                 CodeableConcept clinicalStatus = null;
-                var statusCodeElement = element.Element(Defaults.DefaultNs + "statusCode");
+                var statusCodeElement = element.Element(Namespaces.DefaultNs + "statusCode");
                 if (statusCodeElement != null)
                 {
                     try
@@ -129,7 +129,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                 AllergyIntolerance.ReactionComponent reaction = null;
                 var obsEntryRelationships = element
-                    .Elements(Defaults.DefaultNs + "entryRelationship")
+                    .Elements(Namespaces.DefaultNs + "entryRelationship")
                     .ToList();
 
                 foreach (var obsEntryRelationship in obsEntryRelationships)
@@ -137,8 +137,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     reaction ??= new AllergyIntolerance.ReactionComponent();
 
                     var templateIdValue = obsEntryRelationship
-                        .Element(Defaults.DefaultNs + "observation")?
-                        .Element(Defaults.DefaultNs + "templateId")?
+                        .Element(Namespaces.DefaultNs + "observation")?
+                        .Element(Namespaces.DefaultNs + "templateId")?
                         .Attribute("root")?
                         .Value;
 
@@ -204,7 +204,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 try
                 {
                     // Provenance
-                    var authorElement = element.Elements(Defaults.DefaultNs + "author").FirstOrDefault();
+                    var authorElement = element.Elements(Namespaces.DefaultNs + "author").FirstOrDefault();
                     if (authorElement == null)
                         return allergyIntolerance;
 

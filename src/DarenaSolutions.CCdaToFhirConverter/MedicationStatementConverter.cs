@@ -48,7 +48,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 return cachedResource;
 
             medicationStatement.Effective = element
-                .Element(Defaults.DefaultNs + "effectiveTime")?
+                .Element(Namespaces.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
             try
@@ -77,7 +77,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             try
             {
-                var authorEl = element.Element(Defaults.DefaultNs + "author");
+                var authorEl = element.Element(Namespaces.DefaultNs + "author");
                 if (authorEl != null)
                 {
                     var provenanceConverter = new ProvenanceConverter(PatientId);

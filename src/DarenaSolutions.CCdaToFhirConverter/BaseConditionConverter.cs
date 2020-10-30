@@ -47,7 +47,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 return cachedResource;
 
             condition.Onset = element
-                .Element(Defaults.DefaultNs + "effectiveTime")?
+                .Element(Namespaces.DefaultNs + "effectiveTime")?
                 .ToDateTimeElement();
 
             context.Bundle.Entry.Add(new Bundle.EntryComponent

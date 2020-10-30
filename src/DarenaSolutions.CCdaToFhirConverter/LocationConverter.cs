@@ -65,7 +65,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 // Name
-                var nameElement = element.Elements(Defaults.DefaultNs + "name").FirstOrDefault();
+                var nameElement = element.Elements(Namespaces.DefaultNs + "name").FirstOrDefault();
                 if (nameElement == null)
                     throw new RequiredValueNotFoundException(element, "location/name", "Location.name");
 

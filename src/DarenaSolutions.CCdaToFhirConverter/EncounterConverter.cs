@@ -74,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 // Type - CPT Code
                 var encounterCode = element
-                    .Element(Defaults.DefaultNs + "code")
+                    .Element(Namespaces.DefaultNs + "code")
                     .ToCodeableConcept("Encounter.type");
 
                 if (encounterCode == null)
@@ -94,7 +94,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             // Period
             var effectiveTimeElement =
-                element.Element(Defaults.DefaultNs + "effectiveTime");
+                element.Element(Namespaces.DefaultNs + "effectiveTime");
             encounter.Period = effectiveTimeElement?.ToPeriod();
 
             try

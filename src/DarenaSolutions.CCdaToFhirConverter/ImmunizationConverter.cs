@@ -49,7 +49,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 return cachedResource;
 
             var status = element
-                .Element(Defaults.DefaultNs + "statusCode")?
+                .Element(Namespaces.DefaultNs + "statusCode")?
                 .Attribute("code")?
                 .Value;
 
@@ -60,7 +60,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 immunization.Occurrence = element
-                    .Element(Defaults.DefaultNs + "effectiveTime")?
+                    .Element(Namespaces.DefaultNs + "effectiveTime")?
                     .ToFhirDateTime();
 
                 if (immunization.Occurrence == null)
@@ -83,7 +83,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 try
                 {
                     immunization.VaccineCode = manufacturedMaterialEl
-                        .Element(Defaults.DefaultNs + "code")?
+                        .Element(Namespaces.DefaultNs + "code")?
                         .ToCodeableConcept("Immunization.vaccineCode");
                 }
                 catch (Exception exception)
@@ -92,7 +92,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
 
                 immunization.LotNumber = manufacturedMaterialEl
-                    .Element(Defaults.DefaultNs + "lotNumberText")?
+                    .Element(Namespaces.DefaultNs + "lotNumberText")?
                     .GetFirstTextNode();
             }
 
