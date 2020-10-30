@@ -102,21 +102,12 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         carePlan.Identifier.Add(new Identifier(Systems.SampleBbpSystem, identifierValue));
                         context.Cache.Add(cacheKey, carePlan);
                         break;
-                    case "42349-1":
-                        // Referrals
-                        var observationElement = element.XPathSelectElement("n1:entry/n1:observation[@moodCode='INT']", context.NamespaceManager);
-                        if (observationElement == null)
-                        {
-                            throw new RequiredValueNotFoundException(element, "entry/observation", "CarePlan.identifier");
-                        }
-
-                        var cachedReferralResource = observationElement.SetIdentifiers(context, carePlan);
-                        if (cachedReferralResource != null)
-                            return cachedReferralResource;
-
-                        break;
                     default:
-                        var cachedResource = element.SetIdentifiers(context, carePlan);
+                        var idElement = coding.Code == "42349-1"
+                            ? element.XPathSelectElement("n1:entry/n1:observation[@moodCode='INT']", context.NamespaceManager)
+                            : element;
+
+                        var cachedResource = idElement.SetIdentifiers(context, carePlan);
                         if (cachedResource != null)
                             return cachedResource;
 
