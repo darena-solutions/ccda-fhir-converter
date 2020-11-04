@@ -4,7 +4,6 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Exceptions;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;
 using Hl7.Fhir.Model;

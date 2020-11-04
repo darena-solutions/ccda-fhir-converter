@@ -91,13 +91,18 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var representedOrgXPath = "n1:component/n1:observation/n1:author/n1:assignedAuthor/n1:representedOrganization";
             var representedOrgEls = element.XPathSelectElements(representedOrgXPath, context.NamespaceManager);
 
+            var addedIds = new HashSet<string>();
             foreach (var orgEl in representedOrgEls)
             {
                 try
                 {
                     var organizationConverter = new OrganizationConverter();
                     var organization = organizationConverter.AddToBundle(orgEl, context);
+                    if (addedIds.Contains(organization.Id))
+                        continue;
+
                     report.Performer.Add(new ResourceReference($"urn:uuid:{organization.Id}"));
+                    addedIds.Add(organization.Id);
                 }
                 catch (Exception exception)
                 {
