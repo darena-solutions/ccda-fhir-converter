@@ -94,7 +94,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                 "CarePlan.identifier.value");
                         }
 
-                        var identifierValue = $"{clinicalDocumentIdentifier.Value}|{patientIdentifier.Value}|{coding.Code}";
+                        var identifierValue = $"({clinicalDocumentIdentifier.Value})({patientIdentifier.Value})({coding.Code})";
                         var cacheKey = $"{ResourceType.CarePlan}|{Systems.SampleBbpSystem}|{identifierValue}";
                         if (context.Cache.TryGetValue(cacheKey, out var resource))
                             return resource;
