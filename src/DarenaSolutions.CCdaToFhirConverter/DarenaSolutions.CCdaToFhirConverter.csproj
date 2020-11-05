@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.0-beta</Version>
+    <Authors>Darena Solutions</Authors>
+    <Company>Darena Solutions LLC</Company>
+    <Description>Library that maps a CCDA file to FHIR resources</Description>
+    <Copyright>2020 Darena Solutions LLC</Copyright>
+    <RepositoryUrl>https://github.com/darena-solutions/ccda-fhir-converter</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageProjectUrl>https://github.com/darena-solutions/ccda-fhir-converter/tree/master/src/DarenaSolutions.CCdaToFhirConverter</PackageProjectUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
