@@ -1,4 +1,11 @@
-﻿using System;
+﻿// -------------------------------------------------------------------------------------------------------------------------
+// <copyright file="BaseConditionConverter.cs" company="Darena Solutions LLC">
+// Copyright (c) Darena Solutions LLC. All rights reserved.
+// Licensed under the Apache License Version 2.0. See LICENSE file in the project root for full license information.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------------
+
+using System;
 using System.Xml.Linq;
 using DarenaSolutions.CCdaToFhirConverter.Constants;
 using DarenaSolutions.CCdaToFhirConverter.Extensions;

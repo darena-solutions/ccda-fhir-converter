@@ -1,4 +1,11 @@
-﻿using System.Xml.Linq;
+﻿// -------------------------------------------------------------------------------------------------------------------------
+// <copyright file="Namespaces.cs" company="Darena Solutions LLC">
+// Copyright (c) Darena Solutions LLC. All rights reserved.
+// Licensed under the Apache License Version 2.0. See LICENSE file in the project root for full license information.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------------
+
+using System.Xml.Linq;
 
 namespace DarenaSolutions.CCdaToFhirConverter.Constants
 {
