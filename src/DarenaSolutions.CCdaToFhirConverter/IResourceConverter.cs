@@ -1,4 +1,11 @@
-﻿using System.Collections.Generic;
+﻿// -------------------------------------------------------------------------------------------------------------------------
+// <copyright file="IResourceConverter.cs" company="Darena Solutions LLC">
+// Copyright (c) Darena Solutions LLC. All rights reserved.
+// Licensed under the Apache License Version 2.0. See LICENSE file in the project root for full license information.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------------
+
+using System.Collections.Generic;
 using System.Xml.Linq;
 using Hl7.Fhir.Model;
 

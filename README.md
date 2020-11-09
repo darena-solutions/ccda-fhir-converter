@@ -54,7 +54,7 @@ All converters must implement `IResourceConverter`. The interface contains two m
 are overloads. The first method takes in the CCDA `XDocument` object. In this method the converter will search the CCDA
 document and obtain the necessary elements it would like to convert.
 
-The second method takes in an `IEnumerable<XElement>` object. This method is used in situations where the elements have
+The second method takes in an `IEnumerable<XElement>` argument. This method is used in situations where the elements have
 already been retrieved by some earlier process and the converter should just use those elements instead of trying to search
 in the CCDA. This is helpful in edge-cases where the retrieval of elements may be different from the primary way of retrieving
 those elements.

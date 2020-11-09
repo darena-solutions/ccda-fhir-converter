@@ -1,4 +1,11 @@
-﻿namespace DarenaSolutions.CCdaToFhirConverter.Constants
+﻿// -------------------------------------------------------------------------------------------------------------------------
+// <copyright file="Systems.cs" company="Darena Solutions LLC">
+// Copyright (c) Darena Solutions LLC. All rights reserved.
+// Licensed under the Apache License Version 2.0. See LICENSE file in the project root for full license information.
+// </copyright>
+// -------------------------------------------------------------------------------------------------------------------------
+
+namespace DarenaSolutions.CCdaToFhirConverter.Constants
 {
     /// <summary>
     /// Class that contains various system values that are used throughout this library
