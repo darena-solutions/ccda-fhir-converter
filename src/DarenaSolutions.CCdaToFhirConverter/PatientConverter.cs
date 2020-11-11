@@ -136,7 +136,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
                     if (!string.IsNullOrWhiteSpace(birthDateValue))
                     {
-                        var dt = DateTime.ParseExact(birthDateValue, "yyyyMMdd", CultureInfo.InvariantCulture);
+                        var dt = birthDateValue.ParseCCdaDateTime();
                         patient.BirthDateElement = new Date(dt.Year, dt.Month, dt.Day);
                     }
                 }
@@ -255,9 +255,10 @@ namespace DarenaSolutions.CCdaToFhirConverter
                             Language = communicationCodeElement.ToCodeableConcept("Patient.communication.language")
                         };
 
-                        communicationComponent.Language.Coding[0].System = "urn:ietf:bcp:47";
+                        if (!string.IsNullOrWhiteSpace(communicationComponent.Language.Coding[0].Code))
+                            communicationComponent.Language.Coding[0].System = "urn:ietf:bcp:47";
 
-                        switch (communicationComponent.Language.Coding[0].Code.ToLowerInvariant())
+                        switch (communicationComponent.Language.Coding[0].Code?.ToLowerInvariant())
                         {
                             case "en":
                                 communicationComponent.Language.Coding[0].Display = "English";
@@ -294,6 +295,8 @@ namespace DarenaSolutions.CCdaToFhirConverter
                                 break;
                             case "fr":
                                 communicationComponent.Language.Coding[0].Display = "French";
+                                break;
+                            case null:
                                 break;
                             default:
                                 throw new UnrecognizedValueException(
