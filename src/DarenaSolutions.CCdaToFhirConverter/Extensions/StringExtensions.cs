@@ -97,6 +97,8 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                                 return "yyyyMMddHHmmK";
                             case 19:
                                 return "yyyyMMddHHmmssK";
+                            case 23:
+                                return "yyyyMMddHHmmss.fffK";
                         }
                     }
 
