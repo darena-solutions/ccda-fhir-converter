@@ -49,7 +49,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 var xPath = "../../n1:entry/n1:observation/n1:value";
                 var valueEl = element
                     .XPathSelectElement(xPath, context.NamespaceManager)?
-                    .ToFhirElementBasedOnType(new[] { "co", "cd" }, "Condition.code");
+                    .ToFhirDataTypeBasedOnType(new[] { "co", "cd" }, "Condition.code");
 
                 if (valueEl == null)
                 {

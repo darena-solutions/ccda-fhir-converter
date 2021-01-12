@@ -48,7 +48,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Meta = new Meta()
             };
 
-            medication.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
+            medication.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medication"));
             var cachedResource = element.SetIdentifiers(context, medication);
             if (cachedResource != null)
                 return cachedResource;

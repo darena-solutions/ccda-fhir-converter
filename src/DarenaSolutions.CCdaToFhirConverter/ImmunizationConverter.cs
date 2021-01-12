@@ -50,7 +50,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 PrimarySource = true
             };
 
-            immunization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-immunization"));
+            immunization.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-immunization"));
             var cachedResource = element.SetIdentifiers(context, immunization);
             if (cachedResource != null)
                 return cachedResource;

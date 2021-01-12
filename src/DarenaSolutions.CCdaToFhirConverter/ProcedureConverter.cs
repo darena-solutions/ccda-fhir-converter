@@ -50,7 +50,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Status = EventStatus.Completed
             };
 
-            procedure.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"));
+            procedure.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"));
             var cachedResource = element.SetIdentifiers(context, procedure);
             if (cachedResource != null)
                 return cachedResource;
@@ -73,7 +73,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 procedure.Performed = element
                     .Element(Namespaces.DefaultNs + "effectiveTime")?
-                    .ToDateTimeElement();
+                    .ToDateTimeDataType();
 
                 if (procedure.Performed == null)
                     throw new RequiredValueNotFoundException(element, "effectiveTime", "Procedure.performed");

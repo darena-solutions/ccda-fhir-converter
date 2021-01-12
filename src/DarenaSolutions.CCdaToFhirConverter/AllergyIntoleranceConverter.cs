@@ -51,7 +51,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Patient = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
-            allergyIntolerance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance"));
+            allergyIntolerance.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance"));
             var cachedResource = element.SetIdentifiers(context, allergyIntolerance);
             if (cachedResource != null)
                 return cachedResource;
@@ -69,7 +69,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             else
             {
                 var effectiveTimeElement = element.Element(Namespaces.DefaultNs + "effectiveTime");
-                allergyIntolerance.Onset = effectiveTimeElement?.ToDateTimeElement();
+                allergyIntolerance.Onset = effectiveTimeElement?.ToDateTimeDataType();
 
                 CodeableConcept clinicalStatus = null;
                 var statusCodeElement = element.Element(Namespaces.DefaultNs + "statusCode");

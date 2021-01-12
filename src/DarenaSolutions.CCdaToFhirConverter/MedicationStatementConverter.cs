@@ -56,7 +56,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             medicationStatement.Effective = element
                 .Element(Namespaces.DefaultNs + "effectiveTime")?
-                .ToDateTimeElement();
+                .ToDateTimeDataType();
 
             try
             {

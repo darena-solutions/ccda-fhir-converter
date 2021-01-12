@@ -51,22 +51,22 @@ namespace DarenaSolutions.CCdaToFhirConverter
             switch (codeCoding?.Code)
             {
                 case "59576-9":
-                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/pediatric-bmi-for-age"));
+                    observation.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/pediatric-bmi-for-age"));
                     break;
                 case "8289-1":
                 case "74728-7":
                     // 74728-7 is a code EHR's sometimes use for circumference. Update the code to match profile
                     codeCoding.Code = "8289-1";
-                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/head-occipital-frontal-circumference-percentile"));
+                    observation.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/head-occipital-frontal-circumference-percentile"));
                     break;
                 case "77606-2":
-                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/pediatric-weight-for-height"));
+                    observation.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/pediatric-weight-for-height"));
                     break;
                 case "59408-5":
                 case "2710-2":
                     // 2710-2 is a deprecated code, but still valid. Update it to latest code
                     codeCoding.Code = "59408-5";
-                    observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-pulse-oximetry"));
+                    observation.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-pulse-oximetry"));
 
                     // Also add additional coding required by the oxygen saturation profile
                     observation.Code.Coding.Add(new Coding(
@@ -74,7 +74,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                         "2708-6"));
                     break;
                 default:
-                    observation.Meta.ProfileElement.Add(new Canonical(GeneralVitalSignProfileUri));
+                    observation.Meta.ProfileElement.Add(new FhirUri(GeneralVitalSignProfileUri));
                     break;
             }
 

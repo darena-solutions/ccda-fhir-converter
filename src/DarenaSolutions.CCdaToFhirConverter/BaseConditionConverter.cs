@@ -48,14 +48,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     null)
             };
 
-            condition.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"));
+            condition.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"));
             var cachedResource = element.SetIdentifiers(context, condition);
             if (cachedResource != null)
                 return cachedResource;
 
             condition.Onset = element
                 .Element(Namespaces.DefaultNs + "effectiveTime")?
-                .ToDateTimeElement();
+                .ToDateTimeDataType();
 
             context.Bundle.Entry.Add(new Bundle.EntryComponent
             {
