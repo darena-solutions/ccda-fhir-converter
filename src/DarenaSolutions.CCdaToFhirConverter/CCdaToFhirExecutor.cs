@@ -122,11 +122,11 @@ namespace DarenaSolutions.CCdaToFhirConverter
             var context = new ConversionContext(bundle, cCda, _namespaceManager);
             var organization = _organizationConverter.AddToBundle(cCda, context);
 
-            if (organization?.ResourceType != ResourceType.Organization)
+            if (organization?.TypeName != ResourceType.Organization.ToString())
                 throw new InvalidOperationException("The organization converter did not produce an organization resource");
 
             var patientConverterResult = _patientConverter.AddToBundle(cCda, context);
-            if (patientConverterResult?.ResourceType != ResourceType.Patient)
+            if (patientConverterResult?.TypeName != ResourceType.Patient.ToString())
                 throw new InvalidOperationException("The patient converter did not produce a patient resource");
 
             var patient = (Patient)patientConverterResult;

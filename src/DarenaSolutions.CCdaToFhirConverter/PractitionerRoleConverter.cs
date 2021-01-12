@@ -49,7 +49,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Meta = new Meta()
             };
 
-            role.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitionerrole"));
+            role.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitionerrole"));
             var cachedResource = element.SetIdentifiers(context, role);
             if (cachedResource != null)
                 return cachedResource;

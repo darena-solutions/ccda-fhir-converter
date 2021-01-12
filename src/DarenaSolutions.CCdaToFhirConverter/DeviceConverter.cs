@@ -50,7 +50,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Patient = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
-            device.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
+            device.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-implantable-device"));
             var cachedResource = element.SetIdentifiers(context, device);
             if (cachedResource != null)
                 return cachedResource;
@@ -159,27 +159,27 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     switch (code)
                     {
                         case "C101669":
-                            if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.manufactureDate") is FhirDateTime manufactureDateTime)
+                            if (valueEl.ToFhirDataTypeBasedOnType(new[] { "ts" }, "Device.manufactureDate") is FhirDateTime manufactureDateTime)
                                 device.ManufactureDateElement = manufactureDateTime;
 
                             break;
                         case "C101670":
-                            if (valueEl.ToFhirElementBasedOnType(new[] { "ts" }, "Device.expirationDate") is FhirDateTime expirationDateTime)
+                            if (valueEl.ToFhirDataTypeBasedOnType(new[] { "ts" }, "Device.expirationDate") is FhirDateTime expirationDateTime)
                                 device.ExpirationDateElement = expirationDateTime;
 
                             break;
                         case "C101671":
-                            if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.serialNumber") is FhirString serialNumber)
+                            if (valueEl.ToFhirDataTypeBasedOnType(new[] { "st" }, "Device.serialNumber") is FhirString serialNumber)
                                 device.SerialNumber = serialNumber.Value;
 
                             break;
                         case "C101672":
-                            if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.lotNumber") is FhirString lotNumber)
+                            if (valueEl.ToFhirDataTypeBasedOnType(new[] { "st" }, "Device.lotNumber") is FhirString lotNumber)
                                 device.LotNumber = lotNumber.Value;
 
                             break;
                         case "C113843":
-                            if (valueEl.ToFhirElementBasedOnType(new[] { "st" }, "Device.distinctIdentifier") is FhirString distinctIdentifier)
+                            if (valueEl.ToFhirDataTypeBasedOnType(new[] { "st" }, "Device.distinctIdentifier") is FhirString distinctIdentifier)
                                 device.DistinctIdentifier = distinctIdentifier.Value;
 
                             break;

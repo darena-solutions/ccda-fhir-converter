@@ -91,7 +91,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                     throw new RequiredValueNotFoundException(element, "assignedAuthor", "Provenance.agent.who");
 
                 // Meta
-                provenance.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
+                provenance.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-provenance"));
                 var cachedResource = assignedAuthorElement.SetIdentifiers(context, provenance);
                 if (cachedResource != null)
                     return cachedResource;

@@ -51,7 +51,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
-            report.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-diagnosticreport-lab"));
+            report.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-diagnosticreport-lab"));
             var cachedResource = element.SetIdentifiers(context, report);
             if (cachedResource != null)
                 return cachedResource;
@@ -80,7 +80,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             {
                 report.Effective = element
                     .Element(Namespaces.DefaultNs + "effectiveTime")?
-                    .ToDateTimeElement();
+                    .ToDateTimeDataType();
 
                 if (report.Effective == null)
                     throw new RequiredValueNotFoundException(element, "effectiveTime", "DiagnosticReport.effective");

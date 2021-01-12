@@ -76,13 +76,13 @@ namespace DarenaSolutions.CCdaToFhirConverter
 
             observation.Effective = element
                 .Element(Namespaces.DefaultNs + "effectiveTime")?
-                .ToDateTimeElement();
+                .ToDateTimeDataType();
 
             try
             {
                 observation.Value = element
                     .Element(Namespaces.DefaultNs + "value")?
-                    .ToFhirElementBasedOnType(fhirPropertyPath: "Observation.value");
+                    .ToFhirDataTypeBasedOnType(fhirPropertyPath: "Observation.value");
             }
             catch (Exception exception)
             {

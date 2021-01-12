@@ -55,7 +55,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
-            carePlan.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-careplan"));
+            carePlan.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-careplan"));
             carePlan.Category.Add(new CodeableConcept(
                 "http://hl7.org/fhir/us/core/CodeSystem/careplan-category",
                 "assess-plan"));

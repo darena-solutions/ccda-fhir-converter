@@ -301,12 +301,12 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             {
                 try
                 {
-                    var identifier = identifierElement.ToIdentifier($"{resource.ResourceType}.identifier");
+                    var identifier = identifierElement.ToIdentifier($"{resource.TypeName}.identifier");
                     identifiers.Add(identifier);
 
-                    var key = $"{resource.ResourceType}|{identifier.System}|{identifier.Value}";
+                    var key = $"{resource.TypeName}|{identifier.System}|{identifier.Value}";
 
-                    if (context.Cache.TryGetValue(key, out var cachedResource) && cachedResource.ResourceType == resource.ResourceType)
+                    if (context.Cache.TryGetValue(key, out var cachedResource) && cachedResource.TypeName == resource.TypeName)
                         return cachedResource;
 
                     context.Cache.Add(key, resource);
@@ -321,7 +321,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
             {
                 try
                 {
-                    throw new RequiredValueNotFoundException(element, "id", $"{resource.ResourceType}.identifier");
+                    throw new RequiredValueNotFoundException(element, "id", $"{resource.TypeName}.identifier");
                 }
                 catch (Exception exception)
                 {
@@ -438,7 +438,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// </summary>
         /// <param name="self">The source element</param>
         /// <returns>The FHIR <see cref="Period"/> or <see cref="FhirDateTime"/> representation of the source element</returns>
-        public static Element ToDateTimeElement(this XElement self)
+        public static DataType ToDateTimeDataType(this XElement self)
         {
             var period = self.ToPeriod();
             if (period != null)
@@ -486,20 +486,20 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         }
 
         /// <summary>
-        /// Converts an element into its FHIR <see cref="SimpleQuantity" /> representation
+        /// Converts an element into its FHIR <see cref="Quantity" /> representation
         /// </summary>
         /// <param name="self">The source element</param>
         /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
         /// mapped to. If a path is provided, it will be included in the <see cref="UnrecognizedValueException"/> exception</param>
-        /// <returns>The FHIR <see cref="SimpleQuantity"/> representation of the source element</returns>
-        public static SimpleQuantity ToSimpleQuantity(this XElement self, string fhirPropertyPath = null)
+        /// <returns>The FHIR <see cref="Quantity"/> representation of the source element</returns>
+        public static Quantity ToQuantity(this XElement self, string fhirPropertyPath = null)
         {
             var value = self.Attribute("value")?.Value;
 
             if (!decimal.TryParse(value, out var dValue))
                 throw new UnrecognizedValueException(self, value, elementAttributeName: "value", fhirPropertyPath: fhirPropertyPath);
 
-            return new SimpleQuantity { Value = dValue, Unit = self.Attribute("unit")?.Value };
+            return new Quantity { Value = dValue, Unit = self.Attribute("unit")?.Value };
         }
 
         /// <summary>
@@ -594,7 +594,7 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
         /// <param name="fhirPropertyPath">Optionally specify the path to the FHIR property where the value will be ultimately
         /// mapped to. If a path is provided, it will be included in exceptions thrown by this extension method</param>
         /// <returns>The FHIR representation of the source element, based on reading the 'xsi:type' attribute</returns>
-        public static Element ToFhirElementBasedOnType(this XElement self, string[] expectedTypes = null, string fhirPropertyPath = null)
+        public static DataType ToFhirDataTypeBasedOnType(this XElement self, string[] expectedTypes = null, string fhirPropertyPath = null)
         {
             if (self == null)
                 throw new ArgumentNullException(nameof(self));
@@ -621,10 +621,10 @@ namespace DarenaSolutions.CCdaToFhirConverter.Extensions
                     return new FhirString(self.GetFirstTextNode());
                 case "pq":
                     // Dimensioned quantity -> Simple quantity
-                    return self.ToSimpleQuantity(fhirPropertyPath);
+                    return self.ToQuantity(fhirPropertyPath);
                 case "ts":
                     // Point in time -> DateTime or Period element
-                    return self.ToDateTimeElement();
+                    return self.ToDateTimeDataType();
                 default:
                     throw new UnrecognizedValueException(self, type, elementAttributeName: "type", fhirPropertyPath: fhirPropertyPath);
             }

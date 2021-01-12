@@ -40,7 +40,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         {
             var observation = (Observation)base.PerformElementConversion(element, context);
             observation.Meta = new Meta();
-            observation.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"));
+            observation.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"));
 
             observation
                 .Category

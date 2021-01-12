@@ -52,7 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 }
             }
 
-            organization.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-organization"));
+            organization.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-organization"));
             var cachedResource = element.SetIdentifiers(context, organization);
             if (cachedResource != null)
                 return cachedResource;

@@ -52,7 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Class = new Coding("2.16.840.1.113883.5.4", "AMB")
             };
 
-            encounter.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"));
+            encounter.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"));
 
             // Check for an Encounter Id in the documentationOf/serviceEvent section
             var serviceEventIdElement =

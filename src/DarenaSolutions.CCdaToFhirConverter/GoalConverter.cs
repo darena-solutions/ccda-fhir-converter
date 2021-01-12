@@ -50,14 +50,14 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 LifecycleStatus = Goal.GoalLifecycleStatus.Active
             };
 
-            goal.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-goal"));
+            goal.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-goal"));
             var cachedResource = element.SetIdentifiers(context, goal);
             if (cachedResource != null)
                 return cachedResource;
 
             var effectiveTime = element
                 .Element(Namespaces.DefaultNs + "effectiveTime")?
-                .ToDateTimeElement();
+                .ToDateTimeDataType();
 
             if (effectiveTime is Period period)
             {
@@ -76,7 +76,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             try
             {
                 var descriptionEl = element.Element(Namespaces.DefaultNs + "value");
-                var description = descriptionEl?.ToFhirElementBasedOnType(new[] { "st" }, "Goal.description.text");
+                var description = descriptionEl?.ToFhirDataTypeBasedOnType(new[] { "st" }, "Goal.description.text");
 
                 if (description == null)
                     throw new RequiredValueNotFoundException(element, "value", "Goal.description.text");

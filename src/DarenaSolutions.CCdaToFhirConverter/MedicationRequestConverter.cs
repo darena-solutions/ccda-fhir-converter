@@ -52,7 +52,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
                 Subject = new ResourceReference($"urn:uuid:{PatientId}")
             };
 
-            request.Meta.ProfileElement.Add(new Canonical("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"));
+            request.Meta.ProfileElement.Add(new FhirUri("http://hl7.org/fhir/us/core/StructureDefinition/us-core-medicationrequest"));
             var cachedResource = element.SetIdentifiers(context, request);
             if (cachedResource != null)
                 return cachedResource;
