@@ -181,6 +181,19 @@ var executor = new CCdaToFhirExecutor(
     new MyCustomPatientConverter());
 ```
 
+## Additional Options
+Somtimes it is desired that only the patient resource in the CCDA should be converted and the rest
+of the resources should be ignored. In this situation you can use the `patientOnlyConversion` option
+in the constructor and set this to `true`:
+
+```csharp
+var executor = new CCdaToFhirExecutor(patientOnlyConversion: true);
+```
+
+When constructing the exeuctor this way, the `organizationConverter` and `addDefaultConverters` arguments
+are ignored. It is guaranteed that only the patient will be processed regardless of the options used
+to construct the executor.
+
 # Improvement
 If you recognize an incorrect mapping, want to include an additional converter, improve the documentation or this readme
 file, or just any general question, please raise an issue and we'll look into it right away!
