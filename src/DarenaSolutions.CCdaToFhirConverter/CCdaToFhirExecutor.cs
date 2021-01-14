@@ -25,22 +25,34 @@ namespace DarenaSolutions.CCdaToFhirConverter
         private readonly XmlNamespaceManager _namespaceManager;
         private readonly Dictionary<Type, Func<ConverterFactoryContext, IResourceConverter>> _converterTypes;
 
+        private bool _patientOnlyConversion;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CCdaToFhirExecutor"/> class
         /// </summary>
         /// <param name="organizationConverter">Optionally specify an implementation of <see cref="ISingleResourceConverter"/>
-        /// for the primary organization. If one is not provided, <see cref="OrganizationConverter"/> will be used by default</param>
+        /// for the primary organization. If one is not provided, <see cref="OrganizationConverter"/> will be used by default.
+        /// The argument passed here is ignored if <paramref name="patientOnlyConversion"/> is set to <c>true</c></param>
         /// <param name="patientConverter">Optionally specify an implementation of <see cref="ISingleResourceConverter"/>
         /// for the primary patient. If one is not provided, <see cref="PatientConverter"/> will be used by default</param>
         /// <param name="addDefaultConverters">Optionally specify if the default converters of this library should be added
-        /// to the converter collection. (Default: <c>true</c>)</param>
+        /// to the converter collection. This argument is ignored if <paramref name="patientOnlyConversion"/> is set to
+        /// <c>true</c>. (Default: <c>true</c>)</param>
+        /// <param name="patientOnlyConversion">Optionally indicate if only the patient resource should be converted from
+        /// the CCDA. If this is set to <c>true</c> then the <paramref name="addDefaultConverters"/> and <paramref name="organizationConverter"/>
+        /// arguments are ignored. (Default: <c>false</c>).</param>
         public CCdaToFhirExecutor(
             ISingleResourceConverter organizationConverter = null,
             ISingleResourceConverter patientConverter = null,
-            bool addDefaultConverters = true)
+            bool addDefaultConverters = true,
+            bool patientOnlyConversion = false)
         {
-            _organizationConverter = organizationConverter ?? new OrganizationConverter();
+            _organizationConverter = organizationConverter;
+            if (_organizationConverter == null && !patientOnlyConversion)
+                _organizationConverter = new OrganizationConverter();
+
             _patientConverter = patientConverter ?? new PatientConverter();
+            _patientOnlyConversion = patientOnlyConversion;
 
             _converterTypes = new Dictionary<Type, Func<ConverterFactoryContext, IResourceConverter>>();
 
@@ -48,7 +60,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
             _namespaceManager.AddNamespace("n1", Namespaces.DefaultNs.NamespaceName);
             _namespaceManager.AddNamespace("sdtc", Namespaces.SdtcNs.NamespaceName);
 
-            if (addDefaultConverters)
+            if (!_patientOnlyConversion && addDefaultConverters)
             {
                 ReplaceConverter<AllergyIntoleranceConverter>()
                     .ReplaceConverter<ClinicalImpressionConverter>()
@@ -110,7 +122,7 @@ namespace DarenaSolutions.CCdaToFhirConverter
         /// <returns>The FHIR bundle representation</returns>
         public Bundle Execute(XDocument cCda)
         {
-            if (!_converterTypes.Any())
+            if (!_patientOnlyConversion && !_converterTypes.Any())
                 throw new InvalidOperationException("There are no converters in the collection");
 
             var bundle = new Bundle
@@ -120,33 +132,37 @@ namespace DarenaSolutions.CCdaToFhirConverter
             };
 
             var context = new ConversionContext(bundle, cCda, _namespaceManager);
-            var organization = _organizationConverter.AddToBundle(cCda, context);
-
-            if (organization?.TypeName != ResourceType.Organization.ToString())
-                throw new InvalidOperationException("The organization converter did not produce an organization resource");
-
             var patientConverterResult = _patientConverter.AddToBundle(cCda, context);
+
             if (patientConverterResult?.TypeName != ResourceType.Patient.ToString())
                 throw new InvalidOperationException("The patient converter did not produce a patient resource");
 
             var patient = (Patient)patientConverterResult;
-            patient.ManagingOrganization = new ResourceReference($"urn:uuid:{organization.Id}");
 
-            foreach (var entry in _converterTypes)
+            if (!_patientOnlyConversion)
             {
-                IResourceConverter instance;
-                if (entry.Value != null)
-                    instance = entry.Value(new ConverterFactoryContext(patient.Id, organization.Id, bundle));
-                else
-                    instance = (BaseConverter)Activator.CreateInstance(entry.Key, patient.Id);
+                var organization = _organizationConverter.AddToBundle(cCda, context);
+                if (organization?.TypeName != ResourceType.Organization.ToString())
+                    throw new InvalidOperationException("The organization converter did not produce an organization resource");
 
-                try
+                patient.ManagingOrganization = new ResourceReference($"urn:uuid:{organization.Id}");
+
+                foreach (var entry in _converterTypes)
                 {
-                    instance.AddToBundle(cCda, context);
-                }
-                catch (Exception exception)
-                {
-                    context.Exceptions.Add(exception);
+                    IResourceConverter instance;
+                    if (entry.Value != null)
+                        instance = entry.Value(new ConverterFactoryContext(patient.Id, organization.Id, bundle));
+                    else
+                        instance = (BaseConverter)Activator.CreateInstance(entry.Key, patient.Id);
+
+                    try
+                    {
+                        instance.AddToBundle(cCda, context);
+                    }
+                    catch (Exception exception)
+                    {
+                        context.Exceptions.Add(exception);
+                    }
                 }
             }
 
